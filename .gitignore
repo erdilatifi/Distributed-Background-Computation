@@ -1,0 +1,21 @@
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.coverage
+
+# Node
+frontend/node_modules/
+frontend/.next/
+frontend/.turbo/
+
+# Environment & editor
+.env
+.env.local
+.DS_Store
+*.swp
+.idea/
+.vscode/
+
+# Docker
+redis-data/
