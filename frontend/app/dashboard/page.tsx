@@ -42,8 +42,10 @@ export default function DashboardPage() {
   const [user, setUser] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   
-  const [n, setN] = useState<number>(1_000)
-  const [chunks, setChunks] = useState<number>(4)
+  const [n, setN] = useState<string>('1000')
+  const [chunks, setChunks] = useState<string>('4')
+  const [nError, setNError] = useState<string | null>(null)
+  const [chunksError, setChunksError] = useState<string | null>(null)
   const [jobId, setJobId] = useState<string | null>(null)
   const [status, setStatus] = useState<string>('idle')
   const [progress, setProgress] = useState<number>(0)
@@ -318,6 +320,30 @@ export default function DashboardPage() {
     event.preventDefault()
     setIsSubmitting(true)
     setError(null)
+    
+    // Validate inputs before submission
+    if (nError || chunksError) {
+      setError('Please fix the validation errors before submitting.')
+      setIsSubmitting(false)
+      return
+    }
+    
+    // Parse and validate the string values
+    const nValue = parseInt(n, 10)
+    const chunksValue = parseInt(chunks, 10)
+    
+    if (isNaN(nValue) || isNaN(chunksValue)) {
+      setError('Please enter valid numbers.')
+      setIsSubmitting(false)
+      return
+    }
+    
+    if (nValue < 1 || chunksValue < 1) {
+      setError('Both values must be at least 1.')
+      setIsSubmitting(false)
+      return
+    }
+    
     resetState()
 
     try {
@@ -328,7 +354,7 @@ export default function DashboardPage() {
         return
       }
 
-      const payload: JobRequestPayload = { n, chunks }
+      const payload: JobRequestPayload = { n: nValue, chunks: chunksValue }
       const response = await fetch(`${API_BASE_URL}/jobs`, {
         method: 'POST',
         headers: {
@@ -381,89 +407,144 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 relative overflow-hidden">
-      {/* Premium background effects */}
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-blue-900/20 via-transparent to-transparent" />
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_left,_var(--tw-gradient-stops))] from-purple-900/20 via-transparent to-transparent" />
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[800px] bg-blue-500/10 rounded-full blur-3xl" />
+    <div className="min-h-screen bg-slate-950 relative overflow-hidden">
+      {/* Subtle background effect */}
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-blue-900/10 via-transparent to-transparent" />
       
       <div className="relative z-10">
         <Navbar />
         
         <main className="container mx-auto px-4 pt-24 pb-12">
           <div className="max-w-6xl mx-auto space-y-8">
-            {/* Premium Header with animations */}
-            <div className="text-center space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-700">
-              <div className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-gradient-to-r from-blue-500/10 via-purple-500/10 to-pink-500/10 border border-blue-500/20 text-blue-400 text-sm font-semibold mb-4 shadow-lg shadow-blue-500/10 backdrop-blur-sm">
-                <Play className="w-4 h-4 animate-pulse" />
-                Real-time Job Processing
+            {/* Header */}
+            <div className="text-center space-y-3 md:space-y-4">
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-500/10 border border-blue-500/30 text-blue-400 text-xs md:text-sm font-semibold">
+                <Play className="w-3 h-3 md:w-4 md:h-4" />
+                Real-time Processing
               </div>
-              <h1 className="text-5xl md:text-7xl font-bold tracking-tight">
-                <span className="bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent animate-gradient">
-                  Dashboard
-                </span>
+              <h1 className="text-3xl sm:text-4xl md:text-6xl font-bold tracking-tight text-white">
+                Dashboard
               </h1>
-              <p className="text-xl text-slate-400 max-w-2xl mx-auto leading-relaxed">
-                Submit distributed computation jobs and watch them process in real-time with live progress updates
+              <p className="text-sm md:text-lg text-slate-400 max-w-2xl mx-auto px-4">
+                Submit jobs and track progress in real-time
               </p>
             </div>
 
-          {/* Premium Job Configuration Card */}
-          <Card className="border-slate-800/50 bg-gradient-to-br from-slate-900/90 via-slate-900/70 to-slate-800/90 backdrop-blur-xl shadow-2xl shadow-black/20 hover:shadow-blue-500/10 transition-all duration-500 animate-in fade-in slide-in-from-bottom-4 delay-150">
-            <CardHeader className="space-y-1 pb-6">
-              <CardTitle className="text-2xl font-bold bg-gradient-to-r from-white to-slate-300 bg-clip-text text-transparent">Job Configuration</CardTitle>
+          {/* Job Configuration Card */}
+          <Card className="border-slate-800 bg-slate-900/50 backdrop-blur-sm">
+            <CardHeader className="space-y-1 pb-4 md:pb-6">
+              <CardTitle className="text-xl md:text-2xl font-bold text-white">Job Configuration</CardTitle>
               <CardDescription className="text-slate-400">
                 Configure your distributed computation job parameters
               </CardDescription>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-6">
-                <div className="grid gap-6 sm:grid-cols-2">
-                  <div className="space-y-3 group">
-                    <Label htmlFor="n" className="text-sm font-semibold text-slate-300">Upper bound (n)</Label>
-                    <Input
-                      id="n"
-                      type="number"
-                      min={1}
-                      value={n}
-                      onChange={(event) => setN(Number(event.target.value))}
-                      placeholder="1000"
-                      required
-                      className="h-12 bg-slate-950/50 border-slate-700/50 focus:border-blue-500/50 focus:ring-2 focus:ring-blue-500/20 transition-all duration-300"
-                    />
+                <div className="space-y-4">
+                  <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-4">
+                    <p className="text-sm text-blue-300">
+                      <strong className="font-semibold">What this calculates:</strong> Sum of all integers from 1 to n
+                    </p>
+                    <p className="text-xs text-blue-200/70 mt-1">
+                      Example: n=250 → 1+2+3+...+250 = <strong className="font-semibold">31,375</strong>
+                    </p>
                   </div>
 
-                  <div className="space-y-3 group">
-                    <Label htmlFor="chunks" className="text-sm font-semibold text-slate-300">Chunks</Label>
-                    <Input
-                      id="chunks"
-                      type="number"
-                      min={1}
-                      value={chunks}
-                      onChange={(event) => setChunks(Number(event.target.value))}
-                      placeholder="4"
-                      required
-                      className="h-12 bg-slate-950/50 border-slate-700/50 focus:border-purple-500/50 focus:ring-2 focus:ring-purple-500/20 transition-all duration-300"
-                    />
+                  <div className="grid gap-6 sm:grid-cols-2">
+                    <div className="space-y-3 group">
+                      <Label htmlFor="n" className="text-sm font-semibold text-slate-300">Upper bound (n)</Label>
+                      <Input
+                        id="n"
+                        type="text"
+                        value={n}
+                        onChange={(event) => {
+                          const value = event.target.value
+                          setN(value)
+                          
+                          // Validate input
+                          if (value === '') {
+                            setNError('Please enter a number')
+                          } else if (!/^\d+$/.test(value)) {
+                            setNError('Only positive integers are allowed')
+                          } else if (parseInt(value, 10) < 1) {
+                            setNError('Number must be at least 1')
+                          } else if (parseInt(value, 10) > 1000000000) {
+                            setNError('Number is too large (max: 1,000,000,000)')
+                          } else {
+                            setNError(null)
+                          }
+                        }}
+                        placeholder="1000"
+                        className={`h-12 bg-slate-950/50 border-slate-700/50 focus:border-blue-500/50 focus:ring-2 focus:ring-blue-500/20 transition-all duration-300 ${
+                          nError ? 'border-red-500/50 focus:border-red-500/50 focus:ring-red-500/20' : ''
+                        }`}
+                      />
+                      {nError ? (
+                        <p className="text-xs text-red-400 mt-1 flex items-center gap-1">
+                          <span className="inline-block">⚠️</span>
+                          {nError}
+                        </p>
+                      ) : (
+                        <p className="text-xs text-slate-400 mt-1">Calculate sum from 1 to this number</p>
+                      )}
+                    </div>
+
+                    <div className="space-y-3 group">
+                      <Label htmlFor="chunks" className="text-sm font-semibold text-slate-300">Chunks</Label>
+                      <Input
+                        id="chunks"
+                        type="text"
+                        value={chunks}
+                        onChange={(event) => {
+                          const value = event.target.value
+                          setChunks(value)
+                          
+                          // Validate input
+                          if (value === '') {
+                            setChunksError('Please enter a number')
+                          } else if (!/^\d+$/.test(value)) {
+                            setChunksError('Only positive integers are allowed')
+                          } else if (parseInt(value, 10) < 1) {
+                            setChunksError('Number must be at least 1')
+                          } else if (parseInt(value, 10) > 1024) {
+                            setChunksError('Maximum 1024 chunks allowed')
+                          } else {
+                            setChunksError(null)
+                          }
+                        }}
+                        placeholder="4"
+                        className={`h-12 bg-slate-950/50 border-slate-700/50 focus:border-purple-500/50 focus:ring-2 focus:ring-purple-500/20 transition-all duration-300 ${
+                          chunksError ? 'border-red-500/50 focus:border-red-500/50 focus:ring-red-500/20' : ''
+                        }`}
+                      />
+                      {chunksError ? (
+                        <p className="text-xs text-red-400 mt-1 flex items-center gap-1">
+                          <span className="inline-block">⚠️</span>
+                          {chunksError}
+                        </p>
+                      ) : (
+                        <p className="text-xs text-slate-400 mt-1">Number of parallel workers to use</p>
+                      )}
+                    </div>
                   </div>
                 </div>
 
-                <div className="flex gap-3">
+                <div className="flex flex-col sm:flex-row gap-3">
                   <Button 
                     type="submit" 
-                    disabled={isSubmitting} 
-                    className="flex-1 h-14 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 hover:from-blue-500 hover:via-purple-500 hover:to-pink-500 text-white font-semibold shadow-lg shadow-blue-500/25 hover:shadow-xl hover:shadow-purple-500/30 transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98]"
+                    disabled={isSubmitting || !!nError || !!chunksError || n === '' || chunks === ''} 
+                    className="flex-1 h-12 md:h-14 bg-blue-600 hover:bg-blue-500 text-white font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     size="lg"
                   >
                     {isSubmitting ? (
                       <>
-                        <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                        Submitting...
+                        <Loader2 className="mr-2 h-4 w-4 md:h-5 md:w-5 animate-spin" />
+                        <span className="text-sm md:text-base">Submitting...</span>
                       </>
                     ) : (
                       <>
-                        <Play className="mr-2 h-5 w-5" />
-                        Start Job
+                        <Play className="mr-2 h-4 w-4 md:h-5 md:w-5" />
+                        <span className="text-sm md:text-base">Start Job</span>
                       </>
                     )}
                   </Button>
@@ -473,10 +554,11 @@ export default function DashboardPage() {
                       type="button"
                       onClick={resetJobForm}
                       variant="outline"
-                      className="h-14 px-6 border-slate-700 hover:border-orange-500 hover:bg-orange-500/10 hover:text-orange-400 transition-all duration-300"
+                      className="h-12 md:h-14 sm:w-auto w-full border-slate-700 hover:border-orange-500 hover:bg-orange-500/10 hover:text-orange-400 transition-all"
                       size="lg"
                     >
-                      <RotateCcw className="h-5 w-5" />
+                      <RotateCcw className="h-4 w-4 md:h-5 md:w-5 mr-2 sm:mr-0" />
+                      <span className="sm:hidden">Reset</span>
                     </Button>
                   )}
                 </div>
@@ -549,16 +631,21 @@ export default function DashboardPage() {
                     <div className="pt-6 mt-6 border-t border-slate-700/50">
                       <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-500/10 via-blue-500/10 to-purple-500/10 border border-emerald-500/20 p-6 shadow-2xl shadow-emerald-500/10">
                         <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent" />
-                        <div className="relative flex items-center justify-between">
-                          <div>
-                            <p className="text-sm text-emerald-400 font-semibold mb-2 uppercase tracking-wide">Final Result</p>
-                            <p className="text-5xl font-bold bg-gradient-to-r from-emerald-400 via-blue-400 to-purple-400 bg-clip-text text-transparent">
-                              {result.toLocaleString()}
-                            </p>
-                          </div>
-                          <div className="relative">
-                            <div className="absolute inset-0 bg-emerald-500/20 rounded-full blur-xl" />
-                            <CheckCircle2 className="relative w-16 h-16 text-emerald-400" />
+                        <div className="relative space-y-3">
+                          <div className="flex items-center justify-between">
+                            <div className="flex-1">
+                              <p className="text-sm text-emerald-400 font-semibold mb-2 uppercase tracking-wide">Final Result</p>
+                              <p className="text-5xl font-bold bg-gradient-to-r from-emerald-400 via-blue-400 to-purple-400 bg-clip-text text-transparent">
+                                {result.toLocaleString()}
+                              </p>
+                              <p className="text-xs text-slate-400 mt-2">
+                                Sum of 1 to {n} = {n} × {parseInt(n, 10) + 1} ÷ 2 = {result.toLocaleString()}
+                              </p>
+                            </div>
+                            <div className="relative">
+                              <div className="absolute inset-0 bg-emerald-500/20 rounded-full blur-xl" />
+                              <CheckCircle2 className="relative w-16 h-16 text-emerald-400" />
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -659,16 +746,16 @@ export default function DashboardPage() {
           )}
 
           {/* Job History */}
-          <Card className="border-slate-800/50 bg-gradient-to-br from-slate-900/90 via-slate-900/70 to-slate-800/90 backdrop-blur-xl shadow-2xl animate-in fade-in slide-in-from-bottom-4 delay-700">
+          <Card className="border-slate-800 bg-slate-900/50">
             <CardHeader>
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div>
-                  <CardTitle className="text-2xl font-bold bg-gradient-to-r from-white to-slate-300 bg-clip-text text-transparent flex items-center gap-2">
-                    <History className="h-6 w-6 text-blue-400" />
+                  <CardTitle className="text-xl md:text-2xl font-bold text-white flex items-center gap-2">
+                    <History className="h-5 w-5 md:h-6 md:w-6 text-blue-400" />
                     Job History
                   </CardTitle>
-                  <CardDescription className="mt-2">
-                    Your recent computation jobs
+                  <CardDescription className="mt-1 text-sm">
+                    Your recent jobs
                   </CardDescription>
                 </div>
                 <div className="flex gap-2">
@@ -676,10 +763,10 @@ export default function DashboardPage() {
                     onClick={refreshData}
                     variant="outline"
                     size="sm"
-                    className="gap-2 border-slate-700 hover:border-blue-500 hover:bg-blue-500/10"
+                    className="flex-1 sm:flex-none gap-2 border-slate-700 hover:border-blue-500 hover:bg-blue-500/10 rounded"
                   >
                     <RefreshCw className="h-4 w-4" />
-                    Refresh
+                    <span className="text-xs md:text-sm">Refresh</span>
                   </Button>
                   {jobHistory.length > 0 && (
                     <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
@@ -687,37 +774,37 @@ export default function DashboardPage() {
                         <Button
                           variant="outline"
                           size="sm"
-                          className="gap-2 border-slate-700 hover:border-red-500 hover:bg-red-500/10 hover:text-red-400"
+                          className="flex-1 sm:flex-none gap-2 border-slate-700 hover:border-red-500 hover:bg-red-500/10 hover:text-red-400 rounded"
                         >
                           <Trash2 className="h-4 w-4" />
-                          Clear All
+                          <span className="text-xs md:text-sm">Clear All</span>
                         </Button>
                       </DialogTrigger>
-                      <DialogContent className="sm:max-w-[425px] bg-gradient-to-br from-slate-900 via-slate-900 to-slate-800 border-slate-700">
+                      <DialogContent className="sm:max-w-[425px] bg-slate-900 border-slate-700 rounded">
                         <DialogHeader>
-                          <DialogTitle className="flex items-center gap-2 text-xl">
-                            <div className="p-2 rounded-lg bg-red-500/20">
-                              <AlertTriangle className="h-5 w-5 text-red-400" />
+                          <DialogTitle className="flex items-center gap-2 text-lg">
+                            <div className="p-2 rounded bg-red-500/20">
+                              <span className="text-red-400 text-lg">⚠️</span>
                             </div>
                             Delete All Job History
                           </DialogTitle>
-                          <DialogDescription className="text-slate-400 pt-2">
-                            Are you sure you want to delete all job history? This action cannot be undone and will permanently remove all your job records and statistics.
+                          <DialogDescription className="text-slate-400 pt-2 text-sm">
+                            This will permanently remove all your job records and statistics. This action cannot be undone.
                           </DialogDescription>
                         </DialogHeader>
-                        <DialogFooter className="gap-2 sm:gap-0">
+                        <DialogFooter className="gap-2 sm:gap-0 flex-col sm:flex-row">
                           <Button
                             type="button"
                             variant="outline"
                             onClick={() => setDeleteDialogOpen(false)}
-                            className="border-slate-700 hover:bg-slate-800"
+                            className="border-slate-700 hover:bg-slate-800 rounded w-full sm:w-auto"
                           >
                             Cancel
                           </Button>
                           <Button
                             type="button"
                             onClick={clearAllHistory}
-                            className="bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 text-white"
+                            className="bg-red-600 hover:bg-red-500 text-white rounded w-full sm:w-auto"
                           >
                             <Trash2 className="h-4 w-4 mr-2" />
                             Delete All

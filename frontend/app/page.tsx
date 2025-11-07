@@ -6,11 +6,8 @@ import Navbar from '@/components/Navbar'
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 relative overflow-hidden">
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-blue-900/20 via-transparent to-transparent" />
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_left,_var(--tw-gradient-stops))] from-cyan-900/20 via-transparent to-transparent" />
-      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-blue-500/10 rounded-full blur-3xl animate-pulse" />
-      <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxwYXRoIGQ9Ik0zNiAxOGMzLjMxNCAwIDYgMi42ODYgNiA2cy0yLjY4NiA2LTYgNi02LTIuNjg2LTYtNiAyLjY4Ni02IDYtNiIgc3Ryb2tlPSJyZ2JhKDk5LCAxMDIsIDI0MSwgMC4xKSIvPjwvZz48L3N2Zz4=')] opacity-20" />
+    <div className="min-h-screen bg-slate-950 relative overflow-hidden">
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-blue-900/10 via-transparent to-transparent" />
 
       <div className="relative z-10">
         <Navbar/>
@@ -20,60 +17,59 @@ export default function Home() {
             <div className="grid lg:grid-cols-2 gap-12 items-center">
               <div className="space-y-8 animate-in fade-in slide-in-from-left duration-700">
                 <div className="inline-block">
-                  <span className="inline-flex items-center px-4 py-2 rounded-full text-sm font-semibold bg-gradient-to-r from-blue-500/10 to-cyan-500/10 text-blue-400 border border-blue-500/20 shadow-lg shadow-blue-500/10 backdrop-blur-sm">
-                    <Sparkles className="w-4 h-4 mr-2 animate-pulse" />
-                    Production Ready Platform
+                  <span className="inline-flex items-center px-3 py-1.5 rounded text-xs md:text-sm font-semibold bg-blue-500/10 text-blue-400 border border-blue-500/30">
+                    <Sparkles className="w-3 h-3 md:w-4 md:h-4 mr-2" />
+                    Production Ready
                   </span>
                 </div>
 
-                <h1 className="text-5xl md:text-7xl font-bold tracking-tight leading-tight">
+                <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight leading-tight">
                   <span className="text-white">Distributed</span>
                   <br />
-                  <span className="bg-gradient-to-r from-blue-400 via-cyan-400 to-teal-400 bg-clip-text text-transparent">
+                  <span className="text-blue-400">
                     Computing
                   </span>
                   <br />
                   <span className="text-white">Made Simple</span>
                 </h1>
 
-                <p className="text-xl text-slate-300 leading-relaxed max-w-2xl">
-                  Build scalable background job processing systems with <span className="text-white font-semibold">real-time updates</span>,
-                  <span className="text-white font-semibold"> enterprise authentication</span>, and <span className="text-white font-semibold">comprehensive monitoring</span> out of the box.
+                <p className="text-base md:text-lg lg:text-xl text-slate-300 leading-relaxed">
+                  Build scalable background job processing with <span className="text-white font-semibold">real-time updates</span> and <span className="text-white font-semibold">enterprise authentication</span>.
                 </p>
 
-                <div className="flex flex-col sm:flex-row gap-4 pt-4">
-                  <Button size="lg" asChild className="h-14 text-lg px-8 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 shadow-2xl shadow-blue-500/30 hover:shadow-cyan-500/40 transition-all duration-300 hover:scale-105 group">
+                <div className="flex flex-col sm:flex-row gap-3 pt-4">
+                  <Button size="lg" asChild className="h-12 md:h-14 text-base md:text-lg px-6 md:px-8 bg-blue-600 hover:bg-blue-500 rounded group">
                     <Link href="/register">
                       Get Started Free
-                      <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
+                      <ArrowRight className="ml-2 h-4 w-4 md:h-5 md:w-5 group-hover:translate-x-1 transition-transform" />
                     </Link>
                   </Button>
-                  <Button size="lg" variant="outline" asChild className="h-14 text-lg px-8 border-slate-700 hover:border-slate-600 hover:bg-slate-800/50 backdrop-blur-sm transition-all duration-300">
+                  <Button size="lg" variant="outline" asChild className="h-12 md:h-14 text-base md:text-lg px-6 md:px-8 border-slate-700 hover:border-slate-600 hover:bg-slate-800 rounded">
                     <Link href="/login">
                       Sign In
                     </Link>
                   </Button>
                 </div>
 
-                <div className="flex flex-wrap items-center gap-6 text-sm text-slate-400 pt-4">
-                  <div className="flex items-center gap-2">
-                    <CheckCircle2 className="h-5 w-5 text-emerald-400" />
-                    <span className="font-medium">No credit card required</span>
+                <div className="flex flex-wrap items-center gap-4 md:gap-6 text-xs md:text-sm text-slate-400 pt-2">
+                  <div className="flex items-center gap-1.5">
+                    <CheckCircle2 className="h-4 w-4 text-emerald-400" />
+                    <span>No credit card</span>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <CheckCircle2 className="h-5 w-5 text-emerald-400" />
-                    <span className="font-medium">Free tier available</span>
+                  <div className="flex items-center gap-1.5">
+                    <CheckCircle2 className="h-4 w-4 text-emerald-400" />
+                    <span>Free tier</span>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <CheckCircle2 className="h-5 w-5 text-emerald-400" />
-                    <span className="font-medium">Open source</span>
+                  <div className="flex items-center gap-1.5">
+                    <CheckCircle2 className="h-4 w-4 text-emerald-400" />
+                    <span>Open source</span>
                   </div>
                 </div>
               </div>
 
-              <div className="relative animate-in fade-in slide-in-from-right duration-700 delay-200">
-                <div className="relative bg-slate-900/50 backdrop-blur-xl rounded-2xl border border-slate-800 shadow-2xl overflow-hidden">
-                  <div className="bg-gradient-to-r from-slate-800 to-slate-900 px-4 py-3 flex items-center gap-2 border-b border-slate-800">
+              <div className="relative hidden lg:block">
+                <div className="relative bg-slate-900/50 backdrop-blur-sm rounded border border-slate-800 overflow-hidden">
+                  <div className="bg-slate-800 px-4 py-3 flex items-center gap-2 border-b border-slate-700">
                     <div className="flex gap-2">
                       <div className="w-3 h-3 rounded-full bg-red-500/80" />
                       <div className="w-3 h-3 rounded-full bg-yellow-500/80" />
@@ -81,7 +77,7 @@ export default function Home() {
                     </div>
                     <span className="text-xs text-slate-500 ml-2">app.py</span>
                   </div>
-                  <div className="p-6 font-mono text-sm space-y-2">
+                  <div className="p-4 md:p-6 font-mono text-xs md:text-sm space-y-2">
                     <div className="text-slate-500"># Start a background task</div>
                     <div className="flex gap-2">
                       <span className="text-purple-400">task</span>
