@@ -13,7 +13,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { LogOut, LayoutDashboard, Zap, BookOpen, User, Menu, X, Sparkles, ChevronDown } from 'lucide-react'
+import { LogOut, LayoutDashboard, Layers, BookOpen, User, Menu, X, Sparkles, ChevronDown } from 'lucide-react'
 
 export default function Navbar() {
   const [user, setUser] = useState<any>(null)
@@ -68,10 +68,13 @@ export default function Navbar() {
           <div className="flex h-20 items-center justify-between">
             {/* Logo */}
             <Link href="/" className="flex items-center gap-3 group">
-              <div className="h-10 w-10 rounded bg-blue-600 flex items-center justify-center group-hover:bg-blue-500 transition-colors">
-                <Zap className="h-6 w-6 text-white" />
+              <div className="relative">
+                <div className="absolute inset-0 bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 rounded blur-sm opacity-70 group-hover:opacity-100 transition-opacity" />
+                <div className="relative h-10 w-10 rounded bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 flex items-center justify-center">
+                  <Layers className="h-6 w-6 text-white" />
+                </div>
               </div>
-              <span className="font-bold text-xl text-white group-hover:text-blue-400 transition-colors">
+              <span className="font-bold text-xl bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
                 CeleryDemo
               </span>
             </Link>
@@ -85,14 +88,17 @@ export default function Navbar() {
                   <Link
                     key={link.href}
                     href={link.href}
-                    className={`flex items-center gap-2 px-4 py-2 rounded transition-colors ${
+                    className={`relative flex items-center gap-2 px-4 py-2 transition-colors group ${
                       isActive
-                        ? 'bg-blue-600 text-white'
-                        : 'text-slate-400 hover:text-white hover:bg-slate-800'
+                        ? 'text-white'
+                        : 'text-slate-400 hover:text-white'
                     }`}
                   >
                     <Icon className="h-4 w-4" />
                     <span className="text-sm font-medium">{link.label}</span>
+                    <span className={`absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 transition-transform ${
+                      isActive ? 'scale-x-100' : 'scale-x-0 group-hover:scale-x-100'
+                    }`} />
                   </Link>
                 )
               })}
@@ -104,8 +110,11 @@ export default function Navbar() {
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <button className="flex items-center gap-2 px-3 py-2 rounded bg-slate-800 hover:bg-slate-700 border border-slate-700 transition-colors outline-none">
-                      <div className="h-7 w-7 rounded-full bg-blue-600 flex items-center justify-center">
-                        <User className="h-4 w-4 text-white" />
+                      <div className="relative">
+                        <div className="absolute inset-0 bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 rounded-full blur-sm opacity-70" />
+                        <div className="relative h-8 w-8 rounded-full bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 flex items-center justify-center">
+                          <User className="h-4 w-4 text-white" />
+                        </div>
                       </div>
                       <span className="text-sm text-white font-medium max-w-[100px] truncate">
                         {user?.email?.split('@')[0] || 'User'}
@@ -178,10 +187,10 @@ export default function Navbar() {
             onClick={() => setMobileMenuOpen(false)}
           />
 
-          <div className="absolute top-20 left-4 right-4 bg-slate-900 rounded-2xl border border-slate-700 shadow-xl overflow-hidden">
+          <div className="absolute top-20 left-4 right-4 bg-slate-950/95 backdrop-blur-sm border-t border-slate-800 shadow-xl">
             {/* Mobile menu content */}
 
-            <div className="relative p-6 space-y-3">
+            <div className="relative p-4 space-y-2">
               {navLinks.map((link, index) => {
                 const Icon = link.icon
                 const isActive = pathname === link.href
@@ -190,27 +199,19 @@ export default function Navbar() {
                     key={link.href}
                     href={link.href}
                     onClick={() => setMobileMenuOpen(false)}
-                    className={`flex items-center gap-3 p-4 rounded-2xl transition-all duration-300 group ${
+                    className={`relative flex items-center gap-3 p-3 transition-all duration-300 group border-b border-slate-800 ${
                       isActive
-                        ? 'bg-gradient-to-r from-blue-500/20 via-purple-500/20 to-pink-500/20 border border-white/10'
-                        : 'hover:bg-white/5 border border-transparent hover:border-white/10'
+                        ? 'text-white'
+                        : 'text-slate-400 hover:text-white'
                     }`}
-                    style={{ animationDelay: `${index * 50}ms` }}
                   >
-                    <div className={`p-2 rounded-xl ${
-                      isActive
-                        ? 'bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500'
-                        : 'bg-slate-800 group-hover:bg-slate-700'
-                    } transition-all duration-300`}>
-                      <Icon className="h-5 w-5 text-white" />
-                    </div>
-                    <span className={`font-bold transition-colors duration-300 ${
-                      isActive
-                        ? 'bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent'
-                        : 'text-slate-300 group-hover:text-white'
-                    }`}>
+                    <Icon className="h-5 w-5" />
+                    <span className="font-medium">
                       {link.label}
                     </span>
+                    {isActive && (
+                      <span className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-blue-500 via-purple-500 to-pink-500" />
+                    )}
                   </Link>
                 )
               })}
