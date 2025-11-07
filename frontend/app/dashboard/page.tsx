@@ -533,7 +533,7 @@ export default function DashboardPage() {
                   <Button 
                     type="submit" 
                     disabled={isSubmitting || !!nError || !!chunksError || n === '' || chunks === ''} 
-                    className="flex-1 h-12 md:h-14 bg-blue-600 hover:bg-blue-500 text-white font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full sm:flex-1 h-12 md:h-14 bg-blue-600 hover:bg-blue-500 text-white font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     size="lg"
                   >
                     {isSubmitting ? (
@@ -554,7 +554,7 @@ export default function DashboardPage() {
                       type="button"
                       onClick={resetJobForm}
                       variant="outline"
-                      className="h-12 md:h-14 sm:w-auto w-full border-slate-700 hover:border-orange-500 hover:bg-orange-500/10 hover:text-orange-400 transition-all"
+                      className="w-full sm:w-auto h-12 md:h-14 border-slate-700 hover:border-orange-500 hover:bg-orange-500/10 hover:text-orange-400 transition-all"
                       size="lg"
                     >
                       <RotateCcw className="h-4 w-4 md:h-5 md:w-5 mr-2 sm:mr-0" />
@@ -568,10 +568,10 @@ export default function DashboardPage() {
 
           {/* Premium Progress Card */}
           <Card className="border-slate-800/50 bg-gradient-to-br from-slate-900/95 via-slate-900/80 to-slate-800/95 backdrop-blur-2xl shadow-2xl shadow-black/30 hover:shadow-purple-500/10 transition-all duration-500 animate-in fade-in slide-in-from-bottom-4 delay-300">
-            <CardHeader className="pb-6">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <div className={`relative p-3 rounded-xl transition-all duration-500 ${
+            <CardHeader className="pb-4 md:pb-6">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div className="flex items-center gap-3 md:gap-4">
+                  <div className={`relative p-2 md:p-3 rounded-xl transition-all duration-500 ${
                     status === 'completed' ? 'bg-gradient-to-br from-emerald-500/20 to-emerald-600/20 shadow-lg shadow-emerald-500/20' :
                     status === 'failed' ? 'bg-gradient-to-br from-red-500/20 to-red-600/20 shadow-lg shadow-red-500/20' :
                     status === 'running' ? 'bg-gradient-to-br from-blue-500/20 to-blue-600/20 shadow-lg shadow-blue-500/20 animate-pulse' :
@@ -581,7 +581,7 @@ export default function DashboardPage() {
                     <div className="relative">{getStatusIcon()}</div>
                   </div>
                   <div>
-                    <CardTitle className="text-3xl font-bold">
+                    <CardTitle className="text-2xl md:text-3xl font-bold">
                       <span className={`capitalize bg-gradient-to-r bg-clip-text text-transparent ${
                         status === 'completed' ? 'from-emerald-400 to-emerald-300' :
                         status === 'failed' ? 'from-red-400 to-red-300' :
@@ -589,7 +589,7 @@ export default function DashboardPage() {
                         'from-amber-400 to-amber-300'
                       }`}>{status}</span>
                     </CardTitle>
-                    <p className="text-sm text-slate-400 mt-1.5 font-medium">
+                    <p className="text-xs md:text-sm text-slate-400 mt-1 md:mt-1.5 font-medium">
                       {status === 'idle' ? 'Ready to process' :
                        status === 'pending' ? 'Queued for processing' :
                        status === 'running' ? 'Processing in progress' :
@@ -598,53 +598,53 @@ export default function DashboardPage() {
                     </p>
                   </div>
                 </div>
-                <div className="text-right">
-                  <div className="text-5xl font-bold bg-gradient-to-br from-white via-slate-200 to-slate-400 bg-clip-text text-transparent">{progressPercentage}%</div>
-                  <div className="text-sm text-slate-400 mt-2 font-medium">
+                <div className="text-left sm:text-right w-full sm:w-auto">
+                  <div className="text-4xl md:text-5xl font-bold bg-gradient-to-br from-white via-slate-200 to-slate-400 bg-clip-text text-transparent">{progressPercentage}%</div>
+                  <div className="text-xs md:text-sm text-slate-400 mt-1 md:mt-2 font-medium">
                     {completedChunks}/{Math.max(totalChunks, 1)} chunks
                   </div>
                 </div>
               </div>
             </CardHeader>
-            <CardContent className="space-y-8">
+            <CardContent className="space-y-6 md:space-y-8">
               {/* Premium Progress Bar */}
-              <div className="space-y-4">
+              <div className="space-y-3 md:space-y-4">
                 <div className="relative">
-                  <Progress value={progressPercentage} className="h-5 bg-slate-950/80 border border-slate-800/50 shadow-inner" />
+                  <Progress value={progressPercentage} className="h-4 md:h-5 bg-slate-950/80 border border-slate-800/50 shadow-inner" />
                   <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 via-purple-500/10 to-pink-500/10 rounded-full pointer-events-none" />
                 </div>
-                <div className="flex justify-between text-xs text-slate-500 font-medium px-1">
+                <div className="flex justify-between text-[10px] md:text-xs text-slate-500 font-medium px-1">
                   <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-blue-500" />Started</span>
                   <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-purple-500" />In Progress</span>
                   <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />Complete</span>
                 </div>
               </div>
 
-              {/* Premium Details Card */}
+              {/* Details Card */}
               <Card className="bg-gradient-to-br from-slate-950/80 to-slate-900/80 border-slate-800/50 shadow-xl backdrop-blur-sm">
-                <CardHeader className="pb-4">
-                  <CardTitle className="text-xl font-bold bg-gradient-to-r from-white to-slate-300 bg-clip-text text-transparent">Details</CardTitle>
+                <CardHeader className="pb-3 md:pb-4">
+                  <CardTitle className="text-lg md:text-xl font-bold bg-gradient-to-r from-white to-slate-300 bg-clip-text text-transparent">Details</CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  <p className="text-sm text-slate-300 leading-relaxed">{detail}</p>
+                <CardContent className="space-y-3 md:space-y-4">
+                  <p className="text-xs md:text-sm text-slate-300 leading-relaxed">{detail}</p>
                   {result !== null && (
-                    <div className="pt-6 mt-6 border-t border-slate-700/50">
-                      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-500/10 via-blue-500/10 to-purple-500/10 border border-emerald-500/20 p-6 shadow-2xl shadow-emerald-500/10">
+                    <div className="pt-4 md:pt-6 mt-4 md:mt-6 border-t border-slate-700/50">
+                      <div className="relative overflow-hidden rounded-lg md:rounded-2xl bg-gradient-to-br from-emerald-500/10 via-blue-500/10 to-purple-500/10 border border-emerald-500/20 p-4 md:p-6 shadow-2xl shadow-emerald-500/10">
                         <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent" />
-                        <div className="relative space-y-3">
-                          <div className="flex items-center justify-between">
+                        <div className="relative space-y-2 md:space-y-3">
+                          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                             <div className="flex-1">
-                              <p className="text-sm text-emerald-400 font-semibold mb-2 uppercase tracking-wide">Final Result</p>
-                              <p className="text-5xl font-bold bg-gradient-to-r from-emerald-400 via-blue-400 to-purple-400 bg-clip-text text-transparent">
+                              <p className="text-xs md:text-sm text-emerald-400 font-semibold mb-1 md:mb-2 uppercase tracking-wide">Final Result</p>
+                              <p className="text-3xl md:text-4xl lg:text-5xl font-bold bg-gradient-to-r from-emerald-400 via-blue-400 to-purple-400 bg-clip-text text-transparent break-all">
                                 {result.toLocaleString()}
                               </p>
-                              <p className="text-xs text-slate-400 mt-2">
+                              <p className="text-[10px] md:text-xs text-slate-400 mt-1 md:mt-2">
                                 Sum of 1 to {n} = {n} × {parseInt(n, 10) + 1} ÷ 2 = {result.toLocaleString()}
                               </p>
                             </div>
-                            <div className="relative">
+                            <div className="relative hidden sm:block">
                               <div className="absolute inset-0 bg-emerald-500/20 rounded-full blur-xl" />
-                              <CheckCircle2 className="relative w-16 h-16 text-emerald-400" />
+                              <CheckCircle2 className="relative w-12 h-12 md:w-16 md:h-16 text-emerald-400" />
                             </div>
                           </div>
                         </div>

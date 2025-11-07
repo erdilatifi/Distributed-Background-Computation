@@ -63,6 +63,10 @@ export default function Navbar() {
           ? 'bg-slate-950/95 backdrop-blur-sm border-b border-slate-800'
           : 'bg-transparent'
       }`}>
+        {/* Shimmer effect line */}
+        <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-blue-400/50 to-transparent">
+          <div className="h-full w-1/3 bg-gradient-to-r from-transparent via-white/60 to-transparent animate-shimmer" />
+        </div>
 
         <div className="container mx-auto px-4 md:px-6 relative">
           <div className="flex h-20 items-center justify-between">
