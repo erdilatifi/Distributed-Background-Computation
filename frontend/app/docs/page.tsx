@@ -132,9 +132,9 @@ export default function DocsPage() {
                   <div className="flex-1">
                     <h4 className="font-semibold text-white mb-1">Access the Application</h4>
                     <div className="space-y-2 text-sm text-slate-300">
-                      <p>• Frontend: <code className="bg-slate-950 px-2 py-1 rounded">http://localhost:3000</code></p>
-                      <p>• Backend API: <code className="bg-slate-950 px-2 py-1 rounded">http://localhost:8000</code></p>
-                      <p>• API Docs: <code className="bg-slate-950 px-2 py-1 rounded">http://localhost:8000/docs</code></p>
+                      <p>• Frontend: <code className="bg-slate-950 px-2 py-1 rounded">https://distributed-computation.up.railway.app</code></p>
+                      <p>• Backend API: <code className="bg-slate-950 px-2 py-1 rounded">https://distributed-background-computation-production.up.railway.app</code></p>
+                      <p>• API Docs: <code className="bg-slate-950 px-2 py-1 rounded">https://distributed-background-computation-production.up.railway.app/docs</code></p>
                     </div>
                   </div>
                 </div>
@@ -154,7 +154,7 @@ export default function DocsPage() {
               <div>
                 <h4 className="font-semibold text-white mb-2">Submit a Job</h4>
                 <pre className="bg-slate-950 p-4 rounded-lg text-sm text-slate-300 overflow-x-auto">
-{`POST http://localhost:8000/jobs
+{`POST https://distributed-background-computation-production.up.railway.app/jobs
 Content-Type: application/json
 Authorization: Bearer YOUR_JWT_TOKEN
 
@@ -168,7 +168,7 @@ Authorization: Bearer YOUR_JWT_TOKEN
               <div>
                 <h4 className="font-semibold text-white mb-2">Check Job Status</h4>
                 <pre className="bg-slate-950 p-4 rounded-lg text-sm text-slate-300 overflow-x-auto">
-{`GET http://localhost:8000/jobs/{job_id}
+{`GET https://distributed-background-computation-production.up.railway.app/jobs/{job_id}
 Authorization: Bearer YOUR_JWT_TOKEN`}
                 </pre>
               </div>
