@@ -18,6 +18,8 @@ def main() -> None:
         queue_name,
         "--hostname",
         os.getenv("CELERY_HOSTNAME", "worker@%h"),
+        "--pool",
+        "solo",  # Use single-process mode for Railway
     ]
 
     if concurrency:
