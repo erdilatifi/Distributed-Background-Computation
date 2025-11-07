@@ -5,8 +5,15 @@ import '../styles/globals.css'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'CeleryDemo - Distributed Task Processing',
-  description: 'FastAPI + Celery + Next.js with Supabase Authentication',
+  title: 'CeleryDemo - Distributed Task Processing with FastAPI & Next.js',
+  description: 'Real-time distributed computing platform built with FastAPI, Celery, Next.js, and Supabase. Process large computations with parallel workers and live progress tracking.',
+  keywords: ['distributed computing', 'task processing', 'FastAPI', 'Celery', 'Next.js', 'Supabase', 'background jobs', 'parallel processing'],
+  authors: [{ name: 'CeleryDemo' }],
+  openGraph: {
+    title: 'CeleryDemo - Distributed Task Processing',
+    description: 'Real-time distributed computing platform with FastAPI, Celery, and Next.js',
+    type: 'website',
+  },
 }
 
 export default function RootLayout({

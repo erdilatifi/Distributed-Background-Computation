@@ -325,6 +325,155 @@ Authorization: Bearer YOUR_JWT_TOKEN`}
             </CardContent>
           </Card>
 
+          {/* API Examples */}
+          <Card className="border-slate-800/50 bg-gradient-to-br from-slate-900/90 to-slate-800/90 backdrop-blur-xl shadow-2xl">
+            <CardHeader>
+              <CardTitle className="text-2xl font-bold bg-gradient-to-r from-white to-slate-300 bg-clip-text text-transparent flex items-center gap-2">
+                <Code className="h-6 w-6 text-blue-400" />
+                API Examples
+              </CardTitle>
+              <CardDescription>
+                Working code examples to integrate with the API
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {/* Get API Token */}
+              <div className="space-y-3">
+                <h4 className="font-bold text-white flex items-center gap-2">
+                  <Lock className="h-5 w-5 text-emerald-400" />
+                  1. Get Your API Token
+                </h4>
+                <p className="text-sm text-slate-300">
+                  After logging in, go to your <strong className="text-white">Dashboard</strong> and copy your API Access Token from the "API Access Token" section.
+                </p>
+              </div>
+
+              {/* cURL Example */}
+              <div className="space-y-3">
+                <h4 className="font-bold text-white flex items-center gap-2">
+                  <Terminal className="h-5 w-5 text-blue-400" />
+                  2. Submit a Job (cURL)
+                </h4>
+                <pre className="bg-slate-950 p-4 rounded-lg text-xs text-slate-300 overflow-x-auto border border-slate-700">
+{`# Create a new job
+curl -X POST http://localhost:8000/jobs \\
+  -H "Content-Type: application/json" \\
+  -H "Authorization: Bearer YOUR_API_TOKEN" \\
+  -d '{
+    "n": 1000,
+    "chunks": 4
+  }'
+
+# Response:
+# {
+#   "job_id": "abc123...",
+#   "status": "pending"
+# }`}</pre>
+              </div>
+
+              {/* Check Job Status */}
+              <div className="space-y-3">
+                <h4 className="font-bold text-white flex items-center gap-2">
+                  <RefreshCw className="h-5 w-5 text-purple-400" />
+                  3. Check Job Status (cURL)
+                </h4>
+                <pre className="bg-slate-950 p-4 rounded-lg text-xs text-slate-300 overflow-x-auto border border-slate-700">
+{`# Get job status
+curl -X GET http://localhost:8000/jobs/YOUR_JOB_ID \\
+  -H "Authorization: Bearer YOUR_API_TOKEN"
+
+# Response:
+# {
+#   "job_id": "abc123...",
+#   "status": "completed",
+#   "progress": 1.0,
+#   "completed_chunks": 4,
+#   "total_chunks": 4,
+#   "result": 500500,
+#   "detail": "Job completed successfully"
+# }`}</pre>
+              </div>
+
+              {/* JavaScript/TypeScript Example */}
+              <div className="space-y-3">
+                <h4 className="font-bold text-white flex items-center gap-2">
+                  <FileCode className="h-5 w-5 text-amber-400" />
+                  4. JavaScript/TypeScript Example
+                </h4>
+                <pre className="bg-slate-950 p-4 rounded-lg text-xs text-slate-300 overflow-x-auto border border-slate-700">
+{`// Submit a job
+const response = await fetch('http://localhost:8000/jobs', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+    'Authorization': 'Bearer YOUR_API_TOKEN'
+  },
+  body: JSON.stringify({
+    n: 1000,
+    chunks: 4
+  })
+});
+
+const { job_id } = await response.json();
+
+// Poll for status
+const checkStatus = async () => {
+  const statusResponse = await fetch(
+    \`http://localhost:8000/jobs/\${job_id}\`,
+    {
+      headers: {
+        'Authorization': 'Bearer YOUR_API_TOKEN'
+      }
+    }
+  );
+  
+  const status = await statusResponse.json();
+  console.log('Progress:', status.progress * 100 + '%');
+  
+  if (status.status === 'completed') {
+    console.log('Result:', status.result);
+  }
+};
+
+// Check every second
+const interval = setInterval(async () => {
+  await checkStatus();
+}, 1000);`}</pre>
+              </div>
+
+              {/* API Endpoints Reference */}
+              <div className="space-y-3">
+                <h4 className="font-bold text-white flex items-center gap-2">
+                  <BookOpen className="h-5 w-5 text-pink-400" />
+                  API Endpoints Reference
+                </h4>
+                <div className="space-y-2">
+                  <div className="p-3 rounded-lg bg-slate-950/50 border border-slate-700/50">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="px-2 py-0.5 rounded bg-blue-500/20 text-blue-400 text-xs font-mono">POST</span>
+                      <code className="text-sm text-slate-300">/jobs</code>
+                    </div>
+                    <p className="text-xs text-slate-400">Create a new computation job</p>
+                  </div>
+                  <div className="p-3 rounded-lg bg-slate-950/50 border border-slate-700/50">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 text-xs font-mono">GET</span>
+                      <code className="text-sm text-slate-300">/jobs/:job_id</code>
+                    </div>
+                    <p className="text-xs text-slate-400">Get job status and result</p>
+                  </div>
+                  <div className="p-3 rounded-lg bg-slate-950/50 border border-slate-700/50">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 text-xs font-mono">GET</span>
+                      <code className="text-sm text-slate-300">/jobs</code>
+                    </div>
+                    <p className="text-xs text-slate-400">List all your jobs</p>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
           {/* Advanced Features */}
           <Card className="border-slate-800/50 bg-gradient-to-br from-slate-900/90 to-slate-800/90 backdrop-blur-xl shadow-2xl">
             <CardHeader>
@@ -383,6 +532,95 @@ Authorization: Bearer YOUR_JWT_TOKEN`}
                       <p className="text-sm text-slate-400">Per-user throttling and quota management</p>
                     </div>
                   </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Limits & Quotas */}
+          <Card className="border-slate-800/50 bg-gradient-to-br from-slate-900/90 to-slate-800/90 backdrop-blur-xl shadow-2xl">
+            <CardHeader>
+              <CardTitle className="text-2xl font-bold bg-gradient-to-r from-white to-slate-300 bg-clip-text text-transparent flex items-center gap-2">
+                <BarChart className="h-6 w-6 text-amber-400" />
+                Limits & Quotas
+              </CardTitle>
+              <CardDescription>
+                Understanding system limits and resource constraints
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-6">
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div className="p-4 rounded-lg bg-slate-950/50 border border-slate-700/50">
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="p-2 rounded-lg bg-blue-500/20">
+                        <Users className="h-5 w-5 text-blue-400" />
+                      </div>
+                      <h4 className="font-bold text-white">Computation Limits</h4>
+                    </div>
+                    <ul className="space-y-2 text-sm text-slate-300">
+                      <li className="flex items-start gap-2">
+                        <CheckCircle2 className="h-4 w-4 text-emerald-400 mt-0.5 flex-shrink-0" />
+                        <span><strong className="text-white">Max n:</strong> 1,000,000,000 (1 billion)</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <CheckCircle2 className="h-4 w-4 text-emerald-400 mt-0.5 flex-shrink-0" />
+                        <span><strong className="text-white">Max chunks:</strong> 1,024 parallel workers</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <CheckCircle2 className="h-4 w-4 text-emerald-400 mt-0.5 flex-shrink-0" />
+                        <span><strong className="text-white">Min values:</strong> Both n and chunks must be ≥ 1</span>
+                      </li>
+                    </ul>
+                  </div>
+
+                  <div className="p-4 rounded-lg bg-slate-950/50 border border-slate-700/50">
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="p-2 rounded-lg bg-purple-500/20">
+                        <RefreshCw className="h-5 w-5 text-purple-400" />
+                      </div>
+                      <h4 className="font-bold text-white">Rate Limits</h4>
+                    </div>
+                    <ul className="space-y-2 text-sm text-slate-300">
+                      <li className="flex items-start gap-2">
+                        <CheckCircle2 className="h-4 w-4 text-emerald-400 mt-0.5 flex-shrink-0" />
+                        <span><strong className="text-white">Concurrent jobs:</strong> Per-user limits apply</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <CheckCircle2 className="h-4 w-4 text-emerald-400 mt-0.5 flex-shrink-0" />
+                        <span><strong className="text-white">API requests:</strong> Standard rate limiting enabled</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <CheckCircle2 className="h-4 w-4 text-emerald-400 mt-0.5 flex-shrink-0" />
+                        <span><strong className="text-white">Job history:</strong> Unlimited storage per user</span>
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+
+                <div className="p-4 rounded-lg bg-blue-500/10 border border-blue-500/20">
+                  <h4 className="font-bold text-white mb-2 flex items-center gap-2">
+                    <Zap className="h-5 w-5 text-blue-400" />
+                    Performance Tips
+                  </h4>
+                  <ul className="space-y-2 text-sm text-slate-300">
+                    <li className="flex items-start gap-2">
+                      <span className="text-blue-400 mt-0.5">•</span>
+                      <span>Use more chunks for larger n values to maximize parallelization</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-blue-400 mt-0.5">•</span>
+                      <span>Optimal chunk count depends on available workers (typically 4-16)</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-blue-400 mt-0.5">•</span>
+                      <span>Results are cached - identical jobs return instantly</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-blue-400 mt-0.5">•</span>
+                      <span>Progress updates every second via automatic polling</span>
+                    </li>
+                  </ul>
                 </div>
               </div>
             </CardContent>

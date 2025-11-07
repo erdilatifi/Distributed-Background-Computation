@@ -11,7 +11,7 @@ import { Label } from '@/components/ui/label'
 import { Progress } from '@/components/ui/progress'
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
-import { Loader2, Play, CheckCircle2, XCircle, Clock, History, TrendingUp, Award, RotateCcw, Trash2, RefreshCw, AlertTriangle } from 'lucide-react'
+import { Loader2, Play, CheckCircle2, XCircle, Clock, History, TrendingUp, Award, RotateCcw, Trash2, RefreshCw, AlertTriangle, Copy, Key, Check } from 'lucide-react'
 
 type JobRequestPayload = {
   n: number
@@ -65,6 +65,8 @@ export default function DashboardPage() {
   const [currentPage, setCurrentPage] = useState(1)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const jobsPerPage = 4
+  const [apiToken, setApiToken] = useState<string | null>(null)
+  const [tokenCopied, setTokenCopied] = useState(false)
 
   const pollRef = useRef<NodeJS.Timeout | null>(null)
 
@@ -181,8 +183,24 @@ export default function DashboardPage() {
     if (user) {
       fetchJobHistory()
       fetchUserStats()
+      // Fetch API token
+      const getToken = async () => {
+        const { data: { session } } = await supabase.auth.getSession()
+        if (session?.access_token) {
+          setApiToken(session.access_token)
+        }
+      }
+      getToken()
     }
-  }, [user, fetchJobHistory, fetchUserStats])
+  }, [user, fetchJobHistory, fetchUserStats, supabase])
+
+  const copyToken = async () => {
+    if (apiToken) {
+      await navigator.clipboard.writeText(apiToken)
+      setTokenCopied(true)
+      setTimeout(() => setTokenCopied(false), 2000)
+    }
+  }
 
   const resetState = () => {
     setStatus('pending')
@@ -744,6 +762,68 @@ export default function DashboardPage() {
               </Card>
             </div>
           )}
+
+          {/* API Token Card */}
+          <Card className="border-slate-800 bg-slate-900/50 backdrop-blur-sm">
+            <CardHeader>
+              <CardTitle className="text-xl md:text-2xl font-bold text-white flex items-center gap-2">
+                <Key className="h-5 w-5 md:h-6 md:w-6 text-blue-400" />
+                API Access Token
+              </CardTitle>
+              <CardDescription className="mt-1 text-sm">
+                Use this token to authenticate API requests
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="api-token" className="text-sm font-semibold text-slate-300">Bearer Token</Label>
+                <div className="flex gap-2">
+                  <Input
+                    id="api-token"
+                    type="text"
+                    value={apiToken || 'Loading...'}
+                    readOnly
+                    className="font-mono text-xs bg-slate-950/50 border-slate-700/50"
+                  />
+                  <Button
+                    onClick={copyToken}
+                    variant="outline"
+                    size="sm"
+                    className="flex-shrink-0 border-slate-700 hover:border-blue-500 hover:bg-blue-500/10"
+                    disabled={!apiToken}
+                  >
+                    {tokenCopied ? (
+                      <>
+                        <Check className="h-4 w-4 mr-2" />
+                        Copied!
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="h-4 w-4 mr-2" />
+                        Copy
+                      </>
+                    )}
+                  </Button>
+                </div>
+                <p className="text-xs text-slate-400">
+                  Include this token in the <code className="px-1.5 py-0.5 rounded bg-slate-800 text-blue-300">Authorization</code> header as: <code className="px-1.5 py-0.5 rounded bg-slate-800 text-blue-300">Bearer {apiToken?.substring(0, 20)}...</code>
+                </p>
+              </div>
+
+              <div className="bg-slate-950/50 border border-slate-800 rounded-lg p-4 space-y-3">
+                <p className="text-sm font-semibold text-slate-300">Example API Request:</p>
+                <pre className="text-xs bg-slate-900 p-3 rounded border border-slate-700 overflow-x-auto">
+                  <code className="text-slate-300">{`curl -X POST ${API_BASE_URL}/jobs \\
+  -H "Content-Type: application/json" \\
+  -H "Authorization: Bearer YOUR_TOKEN" \\
+  -d '{"n": 1000, "chunks": 4}'`}</code>
+                </pre>
+                <p className="text-xs text-slate-400">
+                  Replace <code className="px-1 py-0.5 rounded bg-slate-800 text-blue-300">YOUR_TOKEN</code> with your actual token above.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
 
           {/* Job History */}
           <Card className="border-slate-800 bg-slate-900/50">
