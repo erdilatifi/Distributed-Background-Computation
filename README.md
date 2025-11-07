@@ -276,6 +276,17 @@ docker compose up
 
 ## 🔐 Environment Variables
 
+### Quick Setup
+
+**You only need ONE `.env` file** in the project root. Docker Compose uses it for all services.
+
+```bash
+cp .env.example .env
+# Edit .env with your values
+```
+
+### Required Variables
+
 | Variable | Description | Default |
 |----------|-------------|---------|
 | `PROJECT_NAME` | Application name | `FastAPI Celery Next.js Demo` |
@@ -286,31 +297,66 @@ docker compose up
 | `NEXT_PUBLIC_API_URL` | API URL for frontend | `http://localhost:8000` |
 | `LOG_LEVEL` | Logging verbosity | `info` |
 
+### Supabase Configuration (Optional)
+
+For authentication and database features:
+
+| Variable | Description |
+|----------|-------------|
+| `SUPABASE_URL` | Your Supabase project URL |
+| `SUPABASE_ANON_KEY` | Supabase anon/public key |
+| `SUPABASE_SERVICE_KEY` | Supabase service role key (keep secret!) |
+| `NEXT_PUBLIC_SUPABASE_URL` | Same as SUPABASE_URL (for frontend) |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Same as SUPABASE_ANON_KEY (for frontend) |
+
+**Note:** Frontend variables MUST have `NEXT_PUBLIC_` prefix to be exposed to the browser.
+
 ---
 
 ## 🚢 Deployment
 
-### Docker Compose (Production)
+> **Note:** This app requires Docker container hosting (not Vercel/Netlify) because it needs backend services, workers, and Redis.
 
-```bash
-# Use production compose file
-docker compose -f docker-compose.prod.yml up -d
-```
+### 🎯 Recommended: Railway (Easiest)
 
-### Cloud Deployment
+**One-click deployment with managed services:**
 
-**Recommended Platforms:**
-- **AWS**: ECS Fargate + ElastiCache Redis
-- **Azure**: Container Apps + Azure Cache for Redis
-- **GCP**: Cloud Run + Memorystore
-- **Railway**: One-click deploy with managed Redis
+1. Push to GitHub
+2. Go to [railway.app](https://railway.app)
+3. Click "New Project" → "Deploy from GitHub repo"
+4. Add Redis database
+5. Set environment variables
+6. Deploy! 🚀
 
-**Key Considerations:**
-- Use managed Redis service (AWS ElastiCache, Azure Cache, etc.)
-- Set up proper environment variables
-- Enable HTTPS with SSL certificates
-- Configure auto-scaling for workers based on queue depth
-- Set up monitoring (Prometheus + Grafana)
+**Cost:** Free tier available, ~$5-20/month for production
+
+### 🐳 Alternative: Render
+
+**Blueprint deployment included:**
+
+1. Push to GitHub
+2. Go to [render.com](https://render.com)
+3. Click "New" → "Blueprint"
+4. Connect repo (uses `render.yaml`)
+5. Deploy automatically
+
+**Cost:** Free tier available, ~$7-15/month for production
+
+### 📚 Full Deployment Guide
+
+See [DEPLOYMENT_GUIDE.md](DEPLOYMENT_GUIDE.md) for detailed instructions on:
+- Railway (recommended)
+- Render
+- AWS (ECS/App Runner)
+- Azure (Container Apps)
+- DigitalOcean (Droplets)
+
+**Key Requirements:**
+- ✅ Docker container hosting
+- ✅ Managed Redis service
+- ✅ Environment variables configured
+- ✅ HTTPS/SSL enabled
+- ✅ Supabase database setup
 
 ---
 
@@ -386,7 +432,9 @@ Contributions welcome! Please:
 
 ## 📄 License
 
-MIT License - feel free to use this for learning or production projects!
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+Feel free to use this for learning or production projects!
 
 ---
 

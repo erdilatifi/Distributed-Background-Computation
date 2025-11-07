@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from typing import Optional
+from datetime import datetime
 
 from pydantic import BaseModel, Field, conint, confloat
 
@@ -15,6 +16,8 @@ class JobRequest(BaseModel):
 class JobCreated(BaseModel):
     job_id: str = Field(..., description="Identifier that can be used to poll job status.")
     status: str = Field(..., description="Initial status of the job.")
+    cached: bool = Field(False, description="Whether result was returned from cache.")
+    result: Optional[int] = Field(None, description="Result if cached.")
 
 
 class JobStatus(BaseModel):
@@ -27,3 +30,8 @@ class JobStatus(BaseModel):
         None, description="Final aggregated result once the job succeeds."
     )
     detail: Optional[str] = Field(None, description="Additional context about the job state.")
+    created_at: Optional[datetime] = None
+    started_at: Optional[datetime] = None
+    completed_at: Optional[datetime] = None
+    duration_ms: Optional[int] = None
+    is_cached: bool = False
