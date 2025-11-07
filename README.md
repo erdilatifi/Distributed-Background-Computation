@@ -7,6 +7,14 @@
 [![Next.js](https://img.shields.io/badge/Next.js-14-black?logo=next.js)](https://nextjs.org/)
 [![Celery](https://img.shields.io/badge/Celery-5.3.6-37814A?logo=celery)](https://docs.celeryq.dev/)
 
+## 🌐 Live Demo
+
+**Try it now!** The application is deployed on Railway:
+
+- 🎨 **Frontend**: [https://distributed-computation.up.railway.app](https://distributed-computation.up.railway.app)
+- 🔌 **API**: [https://distributed-background-computation-production.up.railway.app](https://distributed-background-computation-production.up.railway.app)
+- 📚 **API Docs**: [https://distributed-background-computation-production.up.railway.app/docs](https://distributed-background-computation-production.up.railway.app/docs)
+
 ---
 
 ## 📖 What Is This?
@@ -135,12 +143,17 @@ This starts 4 services:
 
 ### 3️⃣ Open the Application
 
+**Local Development:**
 Visit **[http://localhost:3000](http://localhost:3000)**
 
-1. Enter a number (e.g., `10000`)
-2. Choose parallel chunks (e.g., `8`)
-3. Click **Submit**
-4. Watch real-time progress! 🎉
+**Production (Railway):**
+Visit **[https://distributed-computation.up.railway.app](https://distributed-computation.up.railway.app)**
+
+1. Register/Login with your email
+2. Enter a number (e.g., `10000`)
+3. Choose parallel chunks (e.g., `8`)
+4. Click **Submit**
+5. Watch real-time progress! 🎉
 
 ---
 
@@ -148,9 +161,19 @@ Visit **[http://localhost:3000](http://localhost:3000)**
 
 ### Create a Job
 
+**Local:**
 ```bash
 curl -X POST http://localhost:8000/jobs \
   -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -d '{"n": 10000, "chunks": 8}'
+```
+
+**Production:**
+```bash
+curl -X POST https://distributed-background-computation-production.up.railway.app/jobs \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
   -d '{"n": 10000, "chunks": 8}'
 ```
 
@@ -164,8 +187,16 @@ curl -X POST http://localhost:8000/jobs \
 
 ### Check Job Status
 
+**Local:**
 ```bash
-curl http://localhost:8000/jobs/3c50e7d3-5c6f-4f74-9c77-b0b28c6b948b
+curl http://localhost:8000/jobs/3c50e7d3-5c6f-4f74-9c77-b0b28c6b948b \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"
+```
+
+**Production:**
+```bash
+curl https://distributed-background-computation-production.up.railway.app/jobs/3c50e7d3-5c6f-4f74-9c77-b0b28c6b948b \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"
 ```
 
 **Response:**
@@ -183,9 +214,13 @@ curl http://localhost:8000/jobs/3c50e7d3-5c6f-4f74-9c77-b0b28c6b948b
 
 ### API Documentation
 
-Interactive API docs available at:
+**Local Development:**
 - **Swagger UI**: [http://localhost:8000/docs](http://localhost:8000/docs)
 - **ReDoc**: [http://localhost:8000/redoc](http://localhost:8000/redoc)
+
+**Production (Railway):**
+- **Swagger UI**: [https://distributed-background-computation-production.up.railway.app/docs](https://distributed-background-computation-production.up.railway.app/docs)
+- **ReDoc**: [https://distributed-background-computation-production.up.railway.app/redoc](https://distributed-background-computation-production.up.railway.app/redoc)
 
 ---
 
@@ -319,13 +354,23 @@ For authentication and database features:
 
 ### 🎯 Recommended: Railway (Easiest)
 
-**One-click deployment with managed services:**
+**This app is currently deployed on Railway!**
+
+**Live URLs:**
+- Frontend: [https://distributed-computation.up.railway.app](https://distributed-computation.up.railway.app)
+- API: [https://distributed-background-computation-production.up.railway.app](https://distributed-background-computation-production.up.railway.app)
+
+**Deploy your own:**
 
 1. Push to GitHub
 2. Go to [railway.app](https://railway.app)
 3. Click "New Project" → "Deploy from GitHub repo"
-4. Add Redis database
-5. Set environment variables
+4. Create 4 services:
+   - **Redis** (Database → Redis)
+   - **API** (Dockerfile: `backend/Dockerfile`, Config: `railway.toml`)
+   - **Worker** (Dockerfile: `worker/Dockerfile`, Config: `railway.worker.toml`)
+   - **Frontend** (Root: `frontend`, Dockerfile: `frontend/Dockerfile`)
+5. Set environment variables for each service
 6. Deploy! 🚀
 
 **Cost:** Free tier available, ~$5-20/month for production
