@@ -131,10 +131,19 @@ export default function DocsPage() {
                   </div>
                   <div className="flex-1">
                     <h4 className="font-semibold text-white mb-1">Access the Application</h4>
-                    <div className="space-y-2 text-sm text-slate-300">
-                      <p>• Frontend: <code className="bg-slate-950 px-2 py-1 rounded">https://distributed-computation.up.railway.app</code></p>
-                      <p>• Backend API: <code className="bg-slate-950 px-2 py-1 rounded">https://distributed-background-computation-production.up.railway.app</code></p>
-                      <p>• API Docs: <code className="bg-slate-950 px-2 py-1 rounded">https://distributed-background-computation-production.up.railway.app/docs</code></p>
+                    <div className="space-y-4 text-sm text-slate-300">
+                      <div className="space-y-2">
+                        <p className="font-semibold text-blue-400">Production:</p>
+                        <p>• Frontend: <code className="bg-slate-950 px-2 py-1 rounded">https://distributed-computation.up.railway.app</code></p>
+                        <p>• Backend API: <code className="bg-slate-950 px-2 py-1 rounded">https://distributed-background-computation-production.up.railway.app</code></p>
+                        <p>• API Docs: <code className="bg-slate-950 px-2 py-1 rounded">https://distributed-background-computation-production.up.railway.app/docs</code></p>
+                      </div>
+                      <div className="space-y-2">
+                        <p className="font-semibold text-emerald-400">Local:</p>
+                        <p>• Frontend: <code className="bg-slate-950 px-2 py-1 rounded">http://localhost:3000</code></p>
+                        <p>• Backend API: <code className="bg-slate-950 px-2 py-1 rounded">http://localhost:8000</code></p>
+                        <p>• API Docs: <code className="bg-slate-950 px-2 py-1 rounded">http://localhost:8000/docs</code></p>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -150,32 +159,62 @@ export default function DocsPage() {
                 How to submit and monitor distributed computation jobs
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
+            <CardContent className="space-y-6">
+              <div className="space-y-4">
                 <h4 className="font-semibold text-white mb-2">Submit a Job</h4>
-                <pre className="bg-slate-950 p-4 rounded-lg text-sm text-slate-300 overflow-x-auto">
+                
+                <div className="space-y-3">
+                  <p className="text-sm font-semibold text-blue-400">Production:</p>
+                  <pre className="bg-slate-950 p-4 rounded-lg text-sm text-slate-300 overflow-x-auto border border-slate-700">
 {`POST https://distributed-background-computation-production.up.railway.app/jobs
 Content-Type: application/json
-Authorization: Bearer YOUR_JWT_TOKEN
+Authorization: Bearer YOUR_API_TOKEN
 
 {
   "n": 1000,
   "chunks": 4
 }`}
-                </pre>
+                  </pre>
+                </div>
+
+                <div className="space-y-3">
+                  <p className="text-sm font-semibold text-emerald-400">Local:</p>
+                  <pre className="bg-slate-950 p-4 rounded-lg text-sm text-slate-300 overflow-x-auto border border-slate-700">
+{`POST http://localhost:8000/jobs
+Content-Type: application/json
+Authorization: Bearer YOUR_API_TOKEN
+
+{
+  "n": 1000,
+  "chunks": 4
+}`}
+                  </pre>
+                </div>
               </div>
 
-              <div>
+              <div className="space-y-4">
                 <h4 className="font-semibold text-white mb-2">Check Job Status</h4>
-                <pre className="bg-slate-950 p-4 rounded-lg text-sm text-slate-300 overflow-x-auto">
+                
+                <div className="space-y-3">
+                  <p className="text-sm font-semibold text-blue-400">Production:</p>
+                  <pre className="bg-slate-950 p-4 rounded-lg text-sm text-slate-300 overflow-x-auto border border-slate-700">
 {`GET https://distributed-background-computation-production.up.railway.app/jobs/{job_id}
-Authorization: Bearer YOUR_JWT_TOKEN`}
-                </pre>
+Authorization: Bearer YOUR_API_TOKEN`}
+                  </pre>
+                </div>
+
+                <div className="space-y-3">
+                  <p className="text-sm font-semibold text-emerald-400">Local:</p>
+                  <pre className="bg-slate-950 p-4 rounded-lg text-sm text-slate-300 overflow-x-auto border border-slate-700">
+{`GET http://localhost:8000/jobs/{job_id}
+Authorization: Bearer YOUR_API_TOKEN`}
+                  </pre>
+                </div>
               </div>
 
               <div className="p-4 rounded-lg bg-blue-500/10 border border-blue-500/20">
                 <p className="text-sm text-blue-300">
-                  <strong>Tip:</strong> The dashboard provides a user-friendly interface to submit jobs and monitor their progress in real-time.
+                  <strong>Tip:</strong> The dashboard provides a user-friendly interface to submit jobs and monitor their progress in real-time via automatic polling (1s).
                 </p>
               </div>
             </CardContent>
@@ -193,7 +232,7 @@ Authorization: Bearer YOUR_JWT_TOKEN`}
               <div className="grid md:grid-cols-2 gap-4">
                 {[
                   { icon: CheckCircle2, title: 'Distributed Processing', desc: 'Split large computations across multiple workers' },
-                  { icon: CheckCircle2, title: 'Real-time Updates', desc: 'Live progress tracking with automatic polling' },
+                  { icon: CheckCircle2, title: 'Real-time Updates', desc: 'Live progress tracking via automatic polling (1s)' },
                   { icon: CheckCircle2, title: 'Secure Authentication', desc: 'Supabase-powered user authentication' },
                   { icon: CheckCircle2, title: 'Modern UI', desc: 'Beautiful, responsive interface with TailwindCSS' },
                   { icon: CheckCircle2, title: 'Docker Ready', desc: 'Fully containerized for easy deployment' },
@@ -344,7 +383,7 @@ Authorization: Bearer YOUR_JWT_TOKEN`}
                   1. Get Your API Token
                 </h4>
                 <p className="text-sm text-slate-300">
-                  After logging in, go to your <strong className="text-white">Dashboard</strong> and copy your API Access Token from the "API Access Token" section.
+                  After logging in, go to your <strong className="text-white">Dashboard</strong> and copy your API Access Token from the "API Access Token" panel.
                 </p>
               </div>
 
@@ -354,9 +393,11 @@ Authorization: Bearer YOUR_JWT_TOKEN`}
                   <Terminal className="h-5 w-5 text-blue-400" />
                   2. Submit a Job (cURL)
                 </h4>
-                <pre className="bg-slate-950 p-4 rounded-lg text-xs text-slate-300 overflow-x-auto border border-slate-700">
-{`# Create a new job
-curl -X POST http://localhost:8000/jobs \\
+                
+                <div className="space-y-3">
+                  <p className="text-sm font-semibold text-blue-400">Production:</p>
+                  <pre className="bg-slate-950 p-4 rounded-lg text-xs text-slate-300 overflow-x-auto border border-slate-700">
+{`curl -X POST https://distributed-background-computation-production.up.railway.app/jobs \\
   -H "Content-Type: application/json" \\
   -H "Authorization: Bearer YOUR_API_TOKEN" \\
   -d '{
@@ -364,11 +405,22 @@ curl -X POST http://localhost:8000/jobs \\
     "chunks": 4
   }'
 
-# Response:
-# {
-#   "job_id": "abc123...",
-#   "status": "pending"
-# }`}</pre>
+# Response: {"job_id": "abc123...", "status": "pending"}`}</pre>
+                </div>
+
+                <div className="space-y-3">
+                  <p className="text-sm font-semibold text-emerald-400">Local:</p>
+                  <pre className="bg-slate-950 p-4 rounded-lg text-xs text-slate-300 overflow-x-auto border border-slate-700">
+{`curl -X POST http://localhost:8000/jobs \\
+  -H "Content-Type: application/json" \\
+  -H "Authorization: Bearer YOUR_API_TOKEN" \\
+  -d '{
+    "n": 1000,
+    "chunks": 4
+  }'
+
+# Response: {"job_id": "abc123...", "status": "pending"}`}</pre>
+                </div>
               </div>
 
               {/* Check Job Status */}
@@ -377,21 +429,28 @@ curl -X POST http://localhost:8000/jobs \\
                   <RefreshCw className="h-5 w-5 text-purple-400" />
                   3. Check Job Status (cURL)
                 </h4>
-                <pre className="bg-slate-950 p-4 rounded-lg text-xs text-slate-300 overflow-x-auto border border-slate-700">
-{`# Get job status
-curl -X GET http://localhost:8000/jobs/YOUR_JOB_ID \\
+                
+                <div className="space-y-3">
+                  <p className="text-sm font-semibold text-blue-400">Production:</p>
+                  <pre className="bg-slate-950 p-4 rounded-lg text-xs text-slate-300 overflow-x-auto border border-slate-700">
+{`curl -X GET https://distributed-background-computation-production.up.railway.app/jobs/YOUR_JOB_ID \\
   -H "Authorization: Bearer YOUR_API_TOKEN"
 
 # Response:
-# {
-#   "job_id": "abc123...",
-#   "status": "completed",
-#   "progress": 1.0,
-#   "completed_chunks": 4,
-#   "total_chunks": 4,
-#   "result": 500500,
-#   "detail": "Job completed successfully"
-# }`}</pre>
+# {"job_id": "abc123...", "status": "completed", "progress": 1.0,
+#  "completed_chunks": 4, "total_chunks": 4, "result": 500500}`}</pre>
+                </div>
+
+                <div className="space-y-3">
+                  <p className="text-sm font-semibold text-emerald-400">Local:</p>
+                  <pre className="bg-slate-950 p-4 rounded-lg text-xs text-slate-300 overflow-x-auto border border-slate-700">
+{`curl -X GET http://localhost:8000/jobs/YOUR_JOB_ID \\
+  -H "Authorization: Bearer YOUR_API_TOKEN"
+
+# Response:
+# {"job_id": "abc123...", "status": "completed", "progress": 1.0,
+#  "completed_chunks": 4, "total_chunks": 4, "result": 500500}`}</pre>
+                </div>
               </div>
 
               {/* JavaScript/TypeScript Example */}
@@ -400,45 +459,62 @@ curl -X GET http://localhost:8000/jobs/YOUR_JOB_ID \\
                   <FileCode className="h-5 w-5 text-amber-400" />
                   4. JavaScript/TypeScript Example
                 </h4>
-                <pre className="bg-slate-950 p-4 rounded-lg text-xs text-slate-300 overflow-x-auto border border-slate-700">
-{`// Submit a job
-const response = await fetch('http://localhost:8000/jobs', {
+                
+                <div className="space-y-3">
+                  <p className="text-sm font-semibold text-blue-400">Production:</p>
+                  <pre className="bg-slate-950 p-4 rounded-lg text-xs text-slate-300 overflow-x-auto border border-slate-700">
+{`const API_URL = 'https://distributed-background-computation-production.up.railway.app';
+
+const response = await fetch(\`\${API_URL}/jobs\`, {
   method: 'POST',
   headers: {
     'Content-Type': 'application/json',
     'Authorization': 'Bearer YOUR_API_TOKEN'
   },
-  body: JSON.stringify({
-    n: 1000,
-    chunks: 4
-  })
+  body: JSON.stringify({ n: 1000, chunks: 4 })
 });
 
 const { job_id } = await response.json();
 
-// Poll for status
 const checkStatus = async () => {
-  const statusResponse = await fetch(
-    \`http://localhost:8000/jobs/\${job_id}\`,
-    {
-      headers: {
-        'Authorization': 'Bearer YOUR_API_TOKEN'
-      }
-    }
-  );
-  
-  const status = await statusResponse.json();
+  const res = await fetch(\`\${API_URL}/jobs/\${job_id}\`, {
+    headers: { 'Authorization': 'Bearer YOUR_API_TOKEN' }
+  });
+  const status = await res.json();
   console.log('Progress:', status.progress * 100 + '%');
-  
-  if (status.status === 'completed') {
-    console.log('Result:', status.result);
-  }
+  if (status.status === 'completed') console.log('Result:', status.result);
 };
 
-// Check every second
-const interval = setInterval(async () => {
-  await checkStatus();
-}, 1000);`}</pre>
+setInterval(checkStatus, 1000);`}</pre>
+                </div>
+
+                <div className="space-y-3">
+                  <p className="text-sm font-semibold text-emerald-400">Local:</p>
+                  <pre className="bg-slate-950 p-4 rounded-lg text-xs text-slate-300 overflow-x-auto border border-slate-700">
+{`const API_URL = 'http://localhost:8000';
+
+const response = await fetch(\`\${API_URL}/jobs\`, {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+    'Authorization': 'Bearer YOUR_API_TOKEN'
+  },
+  body: JSON.stringify({ n: 1000, chunks: 4 })
+});
+
+const { job_id } = await response.json();
+
+const checkStatus = async () => {
+  const res = await fetch(\`\${API_URL}/jobs/\${job_id}\`, {
+    headers: { 'Authorization': 'Bearer YOUR_API_TOKEN' }
+  });
+  const status = await res.json();
+  console.log('Progress:', status.progress * 100 + '%');
+  if (status.status === 'completed') console.log('Result:', status.result);
+};
+
+setInterval(checkStatus, 1000);`}</pre>
+                </div>
               </div>
 
               {/* API Endpoints Reference */}
@@ -492,7 +568,7 @@ const interval = setInterval(async () => {
                     <BarChart className="h-5 w-5 text-blue-400 mt-1" />
                     <div>
                       <h4 className="font-semibold text-white mb-1">Real-time Progress</h4>
-                      <p className="text-sm text-slate-400">Live updates with automatic polling and progress bars</p>
+                      <p className="text-sm text-slate-400">Live updates via automatic polling (1s) with progress bars</p>
                     </div>
                   </div>
                   <div className="flex items-start gap-3 p-3 rounded-lg bg-slate-950/50 border border-slate-700/50">
@@ -618,7 +694,7 @@ const interval = setInterval(async () => {
                     </li>
                     <li className="flex items-start gap-2">
                       <span className="text-blue-400 mt-0.5">•</span>
-                      <span>Progress updates every second via automatic polling</span>
+      <span>Real-time updates via automatic polling (1s)</span>
                     </li>
                   </ul>
                 </div>

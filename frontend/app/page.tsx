@@ -45,8 +45,8 @@ export default function Home() {
                     </Link>
                   </Button>
                   <Button size="lg" variant="outline" asChild className="h-12 md:h-14 text-base md:text-lg px-6 md:px-8 border-slate-700 hover:border-slate-600 hover:bg-slate-800 rounded">
-                    <Link href="/login">
-                      Sign In
+                    <Link href="/docs">
+                      View Documentation
                     </Link>
                   </Button>
                 </div>
@@ -120,16 +120,16 @@ export default function Home() {
           <div className="max-w-6xl mx-auto">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
               {[
-                { icon: TrendingUp, value: 'High', label: 'Availability', color: 'from-blue-500/10 to-blue-600/10 border-blue-500/20' },
-                { icon: Zap, value: 'Fast', label: 'Response Times', color: 'from-cyan-500/10 to-cyan-600/10 border-cyan-500/20' },
-                { icon: Users, value: 'Production', label: 'Ready Platform', color: 'from-emerald-500/10 to-emerald-600/10 border-emerald-500/20' },
-                { icon: Database, value: 'Enterprise', label: 'Grade Security', color: 'from-teal-500/10 to-teal-600/10 border-teal-500/20' },
+                { icon: TrendingUp, value: 'High', label: 'Availability', color: 'from-blue-500/10 to-blue-600/10 border-blue-500/20', link: '/docs' },
+                { icon: Zap, value: 'Fast', label: 'Response Times', color: 'from-cyan-500/10 to-cyan-600/10 border-cyan-500/20', link: '/docs' },
+                { icon: Users, value: 'Production', label: 'Ready Platform', color: 'from-emerald-500/10 to-emerald-600/10 border-emerald-500/20', link: '/docs' },
+                { icon: Database, value: 'Enterprise', label: 'Grade Security', color: 'from-teal-500/10 to-teal-600/10 border-teal-500/20', link: '/docs' },
               ].map((stat, i) => (
-                <div key={i} className={`text-center p-6 rounded-2xl bg-gradient-to-br ${stat.color} border backdrop-blur-sm hover:scale-105 transition-transform duration-300`}>
+                <Link key={i} href={stat.link} className={`text-center p-6 rounded-2xl bg-gradient-to-br ${stat.color} border backdrop-blur-sm hover:scale-105 transition-transform duration-300 cursor-pointer block`}>
                   <stat.icon className="h-8 w-8 text-blue-400 mx-auto mb-3" />
                   <div className="text-2xl md:text-3xl font-bold text-white mb-2">{stat.value}</div>
                   <div className="text-sm text-slate-400 font-medium">{stat.label}</div>
-                </div>
+                </Link>
               ))}
             </div>
           </div>
@@ -153,7 +153,7 @@ export default function Home() {
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-7xl mx-auto">
             {[
-              { icon: Zap, title: 'Real-Time Updates', desc: 'Live progress tracking with automatic updates. Monitor your jobs as they process.' },
+              { icon: Zap, title: 'Real-Time Updates', desc: 'Real-time updates via automatic polling (1s). Monitor your jobs as they process.' },
               { icon: Shield, title: 'Secure by Default', desc: 'Row-level security, JWT authentication, and rate limiting built-in.' },
               { icon: BarChart3, title: 'Monitoring & Analytics', desc: 'Track job performance, errors, and system health in real-time.' },
               { icon: Rocket, title: 'Scalable Architecture', desc: 'Horizontal scaling with Celery workers and Redis for high throughput.' },
@@ -277,7 +277,7 @@ export default function Home() {
                   </Button>
                   <Button size="lg" variant="outline" asChild className="h-14 text-lg px-10 border-white/30 text-white hover:bg-white/10 backdrop-blur-sm">
                     <Link href="/docs">
-                      View Documentation
+                      Documentation
                     </Link>
                   </Button>
                 </div>
