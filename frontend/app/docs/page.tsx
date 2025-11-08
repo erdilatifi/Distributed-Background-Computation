@@ -648,7 +648,7 @@ setInterval(checkStatus, 1000);`}
                       </li>
                       <li className="flex items-start gap-2">
                         <CheckCircle2 className="h-4 w-4 text-emerald-400 mt-0.5 flex-shrink-0" />
-                        <span><strong className="text-white">Max chunks:</strong> 1,024 parallel workers</span>
+                        <span><strong className="text-white">Max chunks:</strong> 100 parallel workers</span>
                       </li>
                       <li className="flex items-start gap-2">
                         <CheckCircle2 className="h-4 w-4 text-emerald-400 mt-0.5 flex-shrink-0" />

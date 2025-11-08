@@ -524,8 +524,8 @@ export default function DashboardPage() {
                             setChunksError('Only positive integers are allowed')
                           } else if (parseInt(value, 10) < 1) {
                             setChunksError('Number must be at least 1')
-                          } else if (parseInt(value, 10) > 1024) {
-                            setChunksError('Maximum 1024 chunks allowed')
+                          } else if (parseInt(value, 10) > 100) {
+                            setChunksError('Maximum 100 chunks allowed')
                           } else {
                             setChunksError(null)
                           }
