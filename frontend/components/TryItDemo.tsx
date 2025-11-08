@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
 import { Loader2, Play, CheckCircle2, XCircle, Sparkles, AlertCircle } from 'lucide-react'
+import { toast } from 'sonner'
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000'
 
@@ -70,18 +71,27 @@ export default function TryItDemo() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ n: 1000, chunks: 4 })
+        body: JSON.stringify({ n: 1000, chunks: 4 }),
       })
+
+      if (response.status === 429) {
+        const retryAfter = response.headers.get('Retry-After')
+        toast.error('Rate limit exceeded', {
+          description: retryAfter 
+            ? `Please wait ${retryAfter} seconds before trying again`
+            : 'You\'ve made too many requests. Please wait a moment.'
+        })
+        throw new Error('Rate limit exceeded')
+      }
+
+      if (!response.ok) {
+        throw new Error('Failed to create job')
+      }
 
       // If successful, API is warmed up
       if (response.ok) {
         setIsWarming(false)
         setApiHealthy(true)
-      }
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ detail: 'Failed to start demo' }))
-        throw new Error(errorData.detail || 'Failed to start demo')
       }
 
       const data = await response.json()
