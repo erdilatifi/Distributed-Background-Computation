@@ -136,13 +136,21 @@ def compute_chunk(self, job_id: str, chunk_index: int, start: int, end: int) -> 
         total_chunks_raw = redis.hget(_progress_key(job_id), "total_chunks") or "1"
         total_chunks = max(int(total_chunks_raw), 1)
         progress = min(1.0, completed / total_chunks)
+        job_started_at_iso = None
+        if completed == 1:
+            job_started_at_iso = datetime.utcnow().isoformat()
+
+        progress_mapping = {
+            "status": "running",
+            "progress": f"{progress:.4f}",
+            "detail": f"Processed chunk {chunk_index + 1} of {total_chunks}.",
+        }
+        if job_started_at_iso:
+            progress_mapping["started_at"] = job_started_at_iso
+
         redis.hset(
             _progress_key(job_id),
-            mapping={
-                "status": "running",
-                "progress": f"{progress:.4f}",
-                "detail": f"Processed chunk {chunk_index + 1} of {total_chunks}.",
-            },
+            mapping=progress_mapping,
         )
         
         # Update Supabase if configured
@@ -160,11 +168,15 @@ def compute_chunk(self, job_id: str, chunk_index: int, start: int, end: int) -> 
                 }).eq("job_id", job_id).eq("chunk_index", chunk_index).execute()
                 
                 # Update overall job progress in database
-                supabase.table("jobs").update({
+                job_update = {
                     "status": "running",
                     "progress": progress,
                     "completed_chunks": completed
-                }).eq("id", job_id).execute()
+                }
+                if job_started_at_iso:
+                    job_update["started_at"] = job_started_at_iso
+
+                supabase.table("jobs").update(job_update).eq("id", job_id).execute()
         except Exception as e:
             logger.warning(f"Supabase update failed (non-critical): {e}")
         
@@ -208,10 +220,21 @@ def finalize_job(self, results: List[int], job_id: str) -> int:
     
     try:
         total = int(sum(results))
-        
+
         # Update job status and result in Redis
         progress_key = _progress_key(job_id)
         total_chunks_raw = redis.hget(progress_key, "total_chunks") or str(len(results))
+        started_at_raw = redis.hget(progress_key, "started_at")
+        completed_at_dt = datetime.utcnow()
+        completed_at_iso = completed_at_dt.isoformat()
+        duration_ms = None
+        if started_at_raw:
+            try:
+                started_at_dt = datetime.fromisoformat(started_at_raw)
+                duration_ms = int((completed_at_dt - started_at_dt).total_seconds() * 1000)
+            except ValueError:
+                logger.warning("Invalid started_at timestamp for job %s: %s", job_id, started_at_raw)
+
         redis.hset(
             progress_key,
             mapping={
@@ -219,10 +242,11 @@ def finalize_job(self, results: List[int], job_id: str) -> int:
                 "progress": "1.0",
                 "completed_chunks": total_chunks_raw,
                 "detail": "Computation finished successfully.",
+                "completed_at": completed_at_iso,
             },
         )
         redis.set(_result_key(job_id), str(total))
-        
+
         # Persist final result to Supabase database (if configured)
         try:
             from .config import get_settings
@@ -231,13 +255,17 @@ def finalize_job(self, results: List[int], job_id: str) -> int:
                 supabase = get_supabase_service_client()
                 
                 # Mark job as completed with final result
-                supabase.table("jobs").update({
+                job_update = {
                     "status": "completed",
                     "progress": 1.0,
                     "completed_chunks": len(results),
                     "result": total,
-                    "completed_at": datetime.utcnow().isoformat()
-                }).eq("id", job_id).execute()
+                    "completed_at": completed_at_iso
+                }
+                if duration_ms is not None:
+                    job_update["duration_ms"] = duration_ms
+
+                supabase.table("jobs").update(job_update).eq("id", job_id).execute()
         except Exception as e:
             logger.warning(f"Supabase update failed (non-critical): {e}")
         
