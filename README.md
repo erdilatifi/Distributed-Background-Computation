@@ -51,16 +51,24 @@ User submits job → FastAPI splits into chunks → Celery workers process in pa
 | Feature | Description |
 |---------|-------------|
 | 🔄 **Distributed Computing** | Split heavy tasks across multiple workers for parallel processing |
-| 📊 **Real-Time Progress** | Live progress tracking with animated UI updates |
+| 📊 **Real-Time Progress** | Live progress tracking with animated UI updates and enhanced status messages |
 | 🎮 **Try It Demo** | Public demo widget on homepage - no signup required |
 | 🔐 **Authentication** | Supabase auth with JWT tokens and user profiles |
-| 🎯 **Dashboard** | Personal dashboard with job history and API token management |
+| 🎯 **Dashboard** | Personal dashboard with preset buttons, job history, and API token management |
 | 🎨 **Modern UI** | Next.js + shadcn/ui + Tailwind CSS with beautiful dark theme |
 | 🐳 **Fully Containerized** | One command to run everything: `docker compose up` |
 | 🧪 **Tested** | Pytest suite with 90%+ coverage using Celery eager mode |
 | 📦 **Production Ready** | Redis for state, FastAPI for API, Celery for workers |
 | 🔌 **API First** | RESTful API with OpenAPI docs at `/docs` |
 | ♿ **Accessible** | WCAG compliant UI components from shadcn/ui |
+| 🛡️ **Rate Limiting** | Per-IP token bucket rate limiter (10 req/min for authenticated, 5 req/min for demo) |
+| 🔁 **Auto-Retry** | Intelligent network error detection with automatic retry (10s delay) |
+| ⚡ **Cold-Start Guard** | Warming banner with health status when API/workers are starting |
+| 🎯 **Smart Presets** | Quick preset buttons (Small/Medium/Large) with collapsible advanced options |
+| 🔒 **Idempotency** | Duplicate submission prevention using Idempotency-Key headers (24h cache) |
+| ⏱️ **Task Time Limits** | Soft (5min) and hard (6min) limits prevent stuck jobs |
+| 📈 **Enhanced Monitoring** | Comprehensive `/monitoring/health` and `/metrics-lite` endpoints |
+| 🧹 **Auto-Cleanup** | 24-hour job retention with automatic cleanup |
 
 ---
 
@@ -492,8 +500,12 @@ docker compose run --rm api pytest backend/app/tests/test_jobs.py::test_rate_lim
 - **Chunk Bars** - Visual bars showing individual chunk completion
 - **Status Badges** - Color-coded job states (pending, running, completed, failed)
 - **Chunk Metrics** - Live count of completed/total chunks (e.g., "3/4 chunks")
-- **Warming Banner** - Alert when API is cold starting (30-60s wait)
-- **Error Handling** - User-friendly error messages
+- **Warming Banner** - Alert when API is cold starting with real-time health status (API, worker, redis)
+- **Preset Selector** - Quick preset buttons (Small/Medium/Large) with estimated completion times
+- **Advanced Options** - Collapsible section for custom n and chunks values with explanatory text
+- **Enhanced Progress Messages** - Emoji-based status updates (📋 Queued, 🚀 Starting, ⚙️ Running, 🔄 Merging, ✅ Complete)
+- **Auto-Retry UI** - Friendly messages during automatic retry with countdown
+- **Error Handling** - User-friendly error messages with emoji indicators
 - **Dark Theme** - Beautiful dark mode by default
 - **Responsive** - Works on mobile, tablet, and desktop
 
@@ -524,7 +536,9 @@ docker compose run --rm api pytest backend/app/tests/test_jobs.py::test_rate_lim
 - **Tech Stack Showcase** - Visual display of technologies used
 
 #### Dashboard (Authenticated Users)
-- **Job Submission Form** - Submit new computation jobs with custom n and chunks
+- **Job Submission Form** - Quick preset buttons (Small/Medium/Large) or custom values via advanced options
+  - **Presets**: Pre-configured values with estimated completion times
+  - **Advanced Options**: Collapsible section for custom n and chunks with helpful explanatory text
 - **User Statistics Cards** - Total jobs, completed, failed, average duration
 - **API Access Token Card** - Prominent display with:
   - Full bearer token in monospace font

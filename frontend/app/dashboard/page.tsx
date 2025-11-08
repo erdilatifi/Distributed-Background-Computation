@@ -625,13 +625,18 @@ export default function DashboardPage() {
                   </div>
 
                   {/* P1: Advanced Options Toggle */}
-                  <button
-                    type="button"
-                    onClick={() => setShowAdvanced(!showAdvanced)}
-                    className="text-sm text-slate-400 hover:text-slate-300 flex items-center gap-2 transition-colors"
-                  >
-                    <span>{showAdvanced ? '▼' : '▶'} Advanced Options</span>
-                  </button>
+                  <div className="space-y-2">
+                    <button
+                      type="button"
+                      onClick={() => setShowAdvanced(!showAdvanced)}
+                      className="text-sm text-slate-400 hover:text-slate-300 flex items-center gap-2 transition-colors"
+                    >
+                      <span>{showAdvanced ? '▼' : '▶'} Advanced Options</span>
+                    </button>
+                    <p className="text-xs text-slate-500 italic">
+                      💡 Presets are just suggestions - expand advanced options to customize the exact values for n and chunks
+                    </p>
+                  </div>
 
                   {/* Advanced inputs - collapsible */}
                   {showAdvanced && (
