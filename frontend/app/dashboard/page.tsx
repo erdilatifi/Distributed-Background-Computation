@@ -724,8 +724,8 @@ export default function DashboardPage() {
                             setNError('Only positive integers are allowed')
                           } else if (parseInt(value, 10) < 1) {
                             setNError('Number must be at least 1')
-                          } else if (parseInt(value, 10) > 1000000000) {
-                            setNError('Number is too large (max: 1,000,000,000)')
+                          } else if (parseInt(value, 10) > 1000000) {
+                            setNError('Number is too large (max: 1,000,000)')
                           } else {
                             setNError(null)
                           }
