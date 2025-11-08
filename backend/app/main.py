@@ -6,11 +6,15 @@ import uuid
 from typing import Optional, List
 from datetime import datetime
 
-from fastapi import Depends, FastAPI, HTTPException, status, WebSocket, Request, Response
+from fastapi import Depends, FastAPI, HTTPException, status, WebSocket, Request, Response, APIRouter
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import StreamingResponse
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
+from starlette.middleware.base import BaseHTTPMiddleware
+import asyncio
+import json
 
 from . import schemas, tasks
 from .config import get_settings
@@ -38,12 +42,27 @@ app = FastAPI(
     redoc_url="/redoc"
 )
 
+# Create v1 API router
+api_v1 = APIRouter(prefix="/v1")
+
 settings = get_settings()
 
 # Rate limiting
 limiter = Limiter(key_func=get_remote_address)
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
+# Rate limit headers middleware
+class RateLimitHeadersMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        response = await call_next(request)
+        # Add rate limit headers if available from slowapi
+        if hasattr(request.state, "view_rate_limit"):
+            limit_info = request.state.view_rate_limit
+            response.headers["X-RateLimit-Limit"] = str(limit_info.limit)
+            response.headers["X-RateLimit-Remaining"] = str(limit_info.remaining)
+            response.headers["X-RateLimit-Reset"] = str(limit_info.reset)
+        return response
 
 # CORS middleware
 app.add_middleware(
@@ -54,7 +73,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Include monitoring routes
+# Add rate limit headers middleware
+app.add_middleware(RateLimitHeadersMiddleware)
+
+# Include monitoring routes (keep at root for backward compatibility)
 app.include_router(monitoring_router)
 
 
@@ -79,15 +101,37 @@ async def root():
         "message": "FastAPI + Celery + Supabase Demo",
         "version": "2.0.0",
         "docs": "/docs",
-        "health": "/monitoring/health"
+        "health": "/healthz",
+        "metrics": "/metrics",
+        "api_v1": "/v1"
     }
+
+
+@app.get("/healthz", tags=["health"])
+async def healthz():
+    """Kubernetes-style health check endpoint"""
+    return {
+        "status": "healthy",
+        "service": "fastapi-celery-demo",
+        "version": "2.0.0"
+    }
+
+
+@app.get("/metrics", tags=["metrics"])
+async def metrics_endpoint():
+    """Prometheus metrics endpoint at root level"""
+    from prometheus_client import generate_latest, CONTENT_TYPE_LATEST
+    return Response(
+        content=generate_latest(),
+        media_type=CONTENT_TYPE_LATEST
+    )
 
 
 # ============================================
 # JOB ENDPOINTS (WITH AUTHENTICATION)
 # ============================================
 
-@app.post(
+@api_v1.post(
     "/jobs",
     response_model=schemas.JobCreated,
     status_code=status.HTTP_202_ACCEPTED,
@@ -235,7 +279,7 @@ async def create_job(
     return response
 
 
-@app.get(
+@api_v1.get(
     "/jobs/{job_id}",
     response_model=schemas.JobStatus,
     summary="Get job status",
@@ -286,7 +330,7 @@ async def get_job_status(
     )
 
 
-@app.get(
+@api_v1.get(
     "/jobs",
     response_model=List[schemas.JobStatus],
     summary="List user's jobs",
@@ -337,10 +381,10 @@ async def list_jobs(
     return jobs
 
 
-@app.delete(
+@api_v1.delete(
     "/jobs/{job_id}",
     status_code=status.HTTP_204_NO_CONTENT,
-    summary="Cancel/delete a job",
+    summary="Cancel a job",
     tags=["jobs"]
 )
 async def cancel_job(
@@ -390,11 +434,97 @@ async def cancel_job(
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
+@api_v1.get(
+    "/jobs/{job_id}/events",
+    summary="Stream job events via SSE",
+    tags=["jobs"]
+)
+async def stream_job_events(
+    job_id: str,
+    current_user: dict = Depends(optional_auth)
+):
+    """
+    Stream job status updates via Server-Sent Events (SSE).
+    
+    Connect to this endpoint to receive real-time updates about job progress.
+    The stream will automatically close when the job completes or fails.
+    """
+    async def event_generator():
+        from .config import get_async_redis_client
+        redis = get_async_redis_client()
+        
+        # Check if job exists
+        progress_key = f"progress:{job_id}"
+        exists = await redis.exists(progress_key)
+        if not exists:
+            yield f"event: error\ndata: {{\"error\": \"Job not found\"}}\n\n"
+            return
+        
+        last_status = None
+        max_iterations = 300  # 5 minutes max (1 second intervals)
+        iteration = 0
+        
+        while iteration < max_iterations:
+            # Get current job status
+            progress_raw = await redis.hgetall(progress_key)
+            if not progress_raw:
+                break
+            
+            status_value = progress_raw.get("status", "unknown")
+            progress_value = float(progress_raw.get("progress", 0) or 0)
+            completed_chunks = int(progress_raw.get("completed_chunks", 0))
+            total_chunks = int(progress_raw.get("total_chunks", 1))
+            detail = progress_raw.get("detail")
+            
+            # Get result if available
+            result_key = f"result:{job_id}"
+            result_raw = await redis.get(result_key)
+            result_value = int(result_raw) if result_raw is not None else None
+            
+            # Create status update
+            status_update = {
+                "job_id": job_id,
+                "status": status_value,
+                "progress": progress_value,
+                "completed_chunks": completed_chunks,
+                "total_chunks": total_chunks,
+                "result": result_value,
+                "detail": detail
+            }
+            
+            # Send update if status changed
+            if status_update != last_status:
+                yield f"event: status\ndata: {json.dumps(status_update)}\n\n"
+                last_status = status_update
+            
+            # Stop streaming if job is done
+            if status_value in ["completed", "failed", "cancelled"]:
+                yield f"event: done\ndata: {{\"status\": \"{status_value}\"}}\n\n"
+                break
+            
+            await asyncio.sleep(1)
+            iteration += 1
+        
+        # Send timeout event if max iterations reached
+        if iteration >= max_iterations:
+            yield f"event: timeout\ndata: {{\"message\": \"Stream timeout\"}}\n\n"
+    
+    return StreamingResponse(
+        event_generator(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no"
+        }
+    )
+
+
 # ============================================
 # WEBSOCKET ENDPOINT (REAL-TIME UPDATES)
 # ============================================
 
-@app.websocket("/ws/{job_id}")
+@api_v1.websocket("/ws/{job_id}")
 async def websocket_endpoint(
     websocket: WebSocket,
     job_id: str,
@@ -438,7 +568,7 @@ async def websocket_endpoint(
 # USER ENDPOINTS
 # ============================================
 
-@app.get(
+@api_v1.get(
     "/me",
     summary="Get current user profile",
     tags=["user"]
@@ -454,7 +584,7 @@ async def get_current_user_profile(
     }
 
 
-@app.get(
+@api_v1.get(
     "/me/stats",
     summary="Get user statistics",
     tags=["user"]
@@ -480,7 +610,7 @@ async def get_user_stats(
 # DEMO ENDPOINTS (PUBLIC, NO AUTH REQUIRED)
 # ============================================
 
-@app.post(
+@api_v1.post(
     "/jobs/demo",
     response_model=schemas.JobCreated,
     status_code=status.HTTP_202_ACCEPTED,
@@ -533,7 +663,7 @@ async def create_demo_job(
     return schemas.JobCreated(job_id=job_id, status="pending")
 
 
-@app.get(
+@api_v1.get(
     "/jobs/demo/{job_id}",
     response_model=schemas.JobStatus,
     summary="Get demo job status (no auth required)",
@@ -582,7 +712,7 @@ async def get_demo_job_status(job_id: str) -> schemas.JobStatus:
 # PUBLIC ENDPOINTS (NO AUTH REQUIRED)
 # ============================================
 
-@app.get(
+@api_v1.get(
     "/cache/stats",
     summary="Get cache statistics",
     tags=["cache"]
@@ -601,6 +731,10 @@ async def get_cache_stats():
         "top_cached_jobs": result.data,
         "total_cached": len(result.data)
     }
+
+
+# Include v1 API router
+app.include_router(api_v1)
 
 
 if __name__ == "__main__":

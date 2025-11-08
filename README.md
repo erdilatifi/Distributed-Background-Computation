@@ -15,6 +15,8 @@
 - 🔌 **API**: [https://distributed-background-computation-production.up.railway.app](https://distributed-background-computation-production.up.railway.app)
 - 📚 **API Docs**: [https://distributed-background-computation-production.up.railway.app/docs](https://distributed-background-computation-production.up.railway.app/docs)
 
+> ⚠️ **Note**: The API may take 30-60 seconds to respond on first request (Railway free tier cold start). Please be patient!
+
 ---
 
 ## 📖 What Is This?
@@ -69,20 +71,23 @@ User submits job → FastAPI splits into chunks → Celery workers process in pa
 │   Next.js UI    │ ← User Interface (Port 3000)
 │  (TypeScript)   │
 └────────┬────────┘
-         │ HTTP Polling
+         │ HTTP Polling / SSE
          ↓
 ┌─────────────────┐
 │   FastAPI API   │ ← REST API (Port 8000)
-│   (Python 3.11) │
+│   (Python 3.11) │    /v1 endpoints
+│   + /healthz    │    /metrics
 └────────┬────────┘
          │
     ┌────┴────┐
     ↓         ↓
 ┌────────┐ ┌──────────────┐
 │ Redis  │ │ Celery Worker│ ← Task Processing
-│ Broker │ │  (Python)    │
+│ Broker │ │  (Python)    │    Scalable
 └────────┘ └──────────────┘
 ```
+
+> 📊 **Detailed Architecture**: See [ARCHITECTURE.md](ARCHITECTURE.md) for comprehensive diagrams, data flows, and scaling strategies.
 
 ### 📁 Project Structure
 
@@ -127,16 +132,18 @@ User submits job → FastAPI splits into chunks → Celery workers process in pa
 
 No installation needed! Test the public API instantly:
 
+> ⚠️ **First Request**: API may take 30-60s to wake up (Railway free tier). Subsequent requests are fast!
+
 ```bash
 # Create a demo job (no auth required)
-curl -X POST https://distributed-background-computation-production.up.railway.app/jobs/demo \
+curl -X POST https://distributed-background-computation-production.up.railway.app/v1/jobs/demo \
   -H "Content-Type: application/json" \
   -d '{"n": 1000, "chunks": 4}'
 
 # Response: {"job_id": "abc-123...", "status": "pending"}
 
 # Check status (replace JOB_ID with the one from above)
-curl https://distributed-background-computation-production.up.railway.app/jobs/demo/JOB_ID
+curl https://distributed-background-computation-production.up.railway.app/v1/jobs/demo/JOB_ID
 
 # Response: {"job_id": "abc-123...", "status": "completed", "result": 500500, "progress": 1.0}
 ```
@@ -154,7 +161,7 @@ curl https://distributed-background-computation-production.up.railway.app/jobs/d
 Prevent duplicate job creation on network retries by including an `Idempotency-Key` header:
 
 ```bash
-curl -X POST https://distributed-background-computation-production.up.railway.app/jobs \
+curl -X POST https://distributed-background-computation-production.up.railway.app/v1/jobs \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer YOUR_TOKEN" \
   -H "Idempotency-Key: unique-request-id-12345" \
@@ -225,6 +232,26 @@ Visit **[https://distributed-computation.up.railway.app](https://distributed-com
 
 ## 🔧 API Reference
 
+### Base URL
+
+**All API endpoints are prefixed with `/v1`:**
+- Local: `http://localhost:8000/v1`
+- Production: `https://distributed-background-computation-production.up.railway.app/v1`
+
+### Health & Monitoring
+
+**Health Check:**
+```bash
+curl http://localhost:8000/healthz
+# Response: {"status": "healthy", "service": "fastapi-celery-demo", "version": "2.0.0"}
+```
+
+**Prometheus Metrics:**
+```bash
+curl http://localhost:8000/metrics
+# Returns Prometheus-format metrics for monitoring
+```
+
 ### Authentication
 
 Most endpoints require a JWT bearer token from Supabase authentication.
@@ -235,13 +262,15 @@ Most endpoints require a JWT bearer token from Supabase authentication.
 3. Copy your **API Access Token** from the prominent card
 4. Use in Authorization header: `Bearer YOUR_TOKEN`
 
-**Demo endpoints** (`/jobs/demo`) don't require authentication - perfect for testing!
+**Demo endpoints** (`/v1/jobs/demo`) don't require authentication - perfect for testing!
 
 ### Create a Job
 
+**Endpoint:** `POST /v1/jobs`
+
 **Local:**
 ```bash
-curl -X POST http://localhost:8000/jobs \
+curl -X POST http://localhost:8000/v1/jobs \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer YOUR_JWT_TOKEN" \
   -d '{"n": 10000, "chunks": 8}'
@@ -249,35 +278,68 @@ curl -X POST http://localhost:8000/jobs \
 
 **Production:**
 ```bash
-curl -X POST https://distributed-background-computation-production.up.railway.app/jobs \
+curl -X POST https://distributed-background-computation-production.up.railway.app/v1/jobs \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer YOUR_JWT_TOKEN" \
   -d '{"n": 10000, "chunks": 8}'
 ```
 
-**Response:**
+**Success Response (202 Accepted):**
 ```json
 {
   "job_id": "3c50e7d3-5c6f-4f74-9c77-b0b28c6b948b",
-  "status": "pending"
+  "status": "pending",
+  "cached": false
 }
 ```
 
+**Error Responses:**
+
+**400 Bad Request** - Invalid parameters:
+```json
+{
+  "detail": "n must be between 1 and 1000000"
+}
+```
+
+**422 Unprocessable Entity** - Validation error:
+```json
+{
+  "detail": [
+    {
+      "loc": ["body", "n"],
+      "msg": "ensure this value is greater than 0",
+      "type": "value_error.number.not_gt"
+    }
+  ]
+}
+```
+
+**429 Too Many Requests** - Rate limit exceeded:
+```json
+{
+  "detail": "Rate limit exceeded: 10 per 1 minute"
+}
+```
+*Headers:* `Retry-After: 45` (seconds until reset)
+
 ### Check Job Status
+
+**Endpoint:** `GET /v1/jobs/{job_id}`
 
 **Local:**
 ```bash
-curl http://localhost:8000/jobs/3c50e7d3-5c6f-4f74-9c77-b0b28c6b948b \
+curl http://localhost:8000/v1/jobs/3c50e7d3-5c6f-4f74-9c77-b0b28c6b948b \
   -H "Authorization: Bearer YOUR_JWT_TOKEN"
 ```
 
 **Production:**
 ```bash
-curl https://distributed-background-computation-production.up.railway.app/jobs/3c50e7d3-5c6f-4f74-9c77-b0b28c6b948b \
+curl https://distributed-background-computation-production.up.railway.app/v1/jobs/3c50e7d3-5c6f-4f74-9c77-b0b28c6b948b \
   -H "Authorization: Bearer YOUR_JWT_TOKEN"
 ```
 
-**Response:**
+**Success Response (200 OK):**
 ```json
 {
   "job_id": "3c50e7d3-5c6f-4f74-9c77-b0b28c6b948b",
@@ -290,13 +352,65 @@ curl https://distributed-background-computation-production.up.railway.app/jobs/3
 }
 ```
 
+**Error Response:**
+
+**404 Not Found** - Job doesn't exist:
+```json
+{
+  "detail": "Job not found."
+}
+```
+
+### Cancel a Job
+
+**Endpoint:** `DELETE /v1/jobs/{job_id}`
+
+```bash
+curl -X DELETE http://localhost:8000/v1/jobs/3c50e7d3-5c6f-4f74-9c77-b0b28c6b948b \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"
+```
+
+**Success Response:** `204 No Content`
+
+**Error Response:**
+
+**404 Not Found** - Job doesn't exist or not owned by user:
+```json
+{
+  "detail": "Job not found"
+}
+```
+
+### Stream Job Events (SSE)
+
+**Endpoint:** `GET /v1/jobs/{job_id}/events`
+
+Receive real-time job updates via Server-Sent Events:
+
+```bash
+curl -N http://localhost:8000/v1/jobs/{job_id}/events \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"
+```
+
+**Event Stream:**
+```
+event: status
+data: {"job_id":"...","status":"running","progress":0.5,"completed_chunks":4,"total_chunks":8}
+
+event: status
+data: {"job_id":"...","status":"completed","progress":1.0,"completed_chunks":8,"total_chunks":8,"result":50005000}
+
+event: done
+data: {"status":"completed"}
+```
+
 ### Demo Endpoints (No Authentication Required)
 
 For quick testing without signup:
 
-**Create Demo Job:**
+**Create Demo Job:** `POST /v1/jobs/demo`
 ```bash
-curl -X POST http://localhost:8000/jobs/demo \
+curl -X POST http://localhost:8000/v1/jobs/demo \
   -H "Content-Type: application/json" \
   -d '{"n": 1000, "chunks": 4}'
 ```
@@ -309,9 +423,9 @@ curl -X POST http://localhost:8000/jobs/demo \
 }
 ```
 
-**Check Demo Job Status:**
+**Check Demo Job Status:** `GET /v1/jobs/demo/{job_id}`
 ```bash
-curl http://localhost:8000/jobs/demo/abc-123-def-456
+curl http://localhost:8000/v1/jobs/demo/abc-123-def-456
 ```
 
 **Demo Limits:**
@@ -324,10 +438,16 @@ curl http://localhost:8000/jobs/demo/abc-123-def-456
 **Local Development:**
 - **Swagger UI**: [http://localhost:8000/docs](http://localhost:8000/docs)
 - **ReDoc**: [http://localhost:8000/redoc](http://localhost:8000/redoc)
+- **Health Check**: [http://localhost:8000/healthz](http://localhost:8000/healthz)
+- **Metrics**: [http://localhost:8000/metrics](http://localhost:8000/metrics)
 
 **Production (Railway):**
 - **Swagger UI**: [https://distributed-background-computation-production.up.railway.app/docs](https://distributed-background-computation-production.up.railway.app/docs)
 - **ReDoc**: [https://distributed-background-computation-production.up.railway.app/redoc](https://distributed-background-computation-production.up.railway.app/redoc)
+- **Health Check**: [https://distributed-background-computation-production.up.railway.app/healthz](https://distributed-background-computation-production.up.railway.app/healthz)
+- **Metrics**: [https://distributed-background-computation-production.up.railway.app/metrics](https://distributed-background-computation-production.up.railway.app/metrics)
+
+> ⚠️ **Note**: First request to production API may take 30-60s (cold start). Check `/healthz` first!
 
 ---
 
@@ -342,12 +462,25 @@ docker compose run --rm api pytest
 **Features:**
 - ✅ Celery eager mode (no broker needed)
 - ✅ FakeRedis for fast in-memory testing
-- ✅ 90%+ code coverage
-- ✅ Unit + integration tests
+- ✅ Comprehensive test coverage
+- ✅ Tests for job create/status/result
+- ✅ Rate limiting behavior tests
+- ✅ Error handling and validation tests
+- ✅ Idempotency key tests
+- ✅ Health check and metrics tests
 
 **Run with coverage:**
 ```bash
 docker compose run --rm api pytest --cov=app --cov-report=html
+```
+
+**Run specific tests:**
+```bash
+# Test job operations
+docker compose run --rm api pytest backend/app/tests/test_jobs.py::test_create_and_complete_job
+
+# Test rate limiting
+docker compose run --rm api pytest backend/app/tests/test_jobs.py::test_rate_limiting
 ```
 
 ---
@@ -355,9 +488,11 @@ docker compose run --rm api pytest --cov=app --cov-report=html
 ## 🎨 Frontend Features
 
 ### UI Components
-- **Progress Bar** - Animated real-time progress
+- **Progress Bar** - Animated real-time progress with percentage
+- **Chunk Bars** - Visual bars showing individual chunk completion
 - **Status Badges** - Color-coded job states (pending, running, completed, failed)
-- **Chunk Metrics** - Live count of completed/total chunks
+- **Chunk Metrics** - Live count of completed/total chunks (e.g., "3/4 chunks")
+- **Warming Banner** - Alert when API is cold starting (30-60s wait)
 - **Error Handling** - User-friendly error messages
 - **Dark Theme** - Beautiful dark mode by default
 - **Responsive** - Works on mobile, tablet, and desktop
@@ -377,7 +512,9 @@ docker compose run --rm api pytest --cov=app --cov-report=html
 - **Try It Demo Widget** - Interactive demo without signup
   - Pre-configured: n=1000, chunks=4
   - Real-time progress bar with percentage
-  - Shows chunk completion (e.g., "3/4 chunks")
+  - Visual chunk bars showing individual chunk completion
+  - Shows chunk completion count (e.g., "3/4 chunks")
+  - Warming banner with retry logic for cold starts
   - Displays final result: 500,500
   - Rate limited: 5 requests/minute
   - Link to sign up for more features
@@ -419,8 +556,8 @@ docker compose run --rm api pytest --cov=app --cov-report=html
 
 ### API Returns 500 Error or /docs Not Loading
 - **Railway cold start**: First request may take 30-60s to wake the server (free tier sleeps after inactivity)
-- **Solution**: Wait 30-60 seconds and retry, or check `/monitoring/health` endpoint first
-- **Tip**: The in-app health indicator (green dot in navbar) shows real-time API status
+- **Solution**: Wait 30-60 seconds and retry, or check `/healthz` endpoint first
+- **Tip**: The Try-it widget shows a warming banner when API is cold starting
 
 ### CORS Errors in Browser
 - **Cause**: Frontend URL not in `BACKEND_CORS_ORIGINS`
@@ -437,7 +574,7 @@ docker compose run --rm api pytest --cov=app --cov-report=html
 
 ### API Docs (/docs) Not Loading
 - **Cause**: API service not running or Railway sleeping
-- **Solution**: Check `/monitoring/health` first, wait for cold start (~30s)
+- **Solution**: Check `/healthz` first, wait for cold start (~30s)
 
 ---
 

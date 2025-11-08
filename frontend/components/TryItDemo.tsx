@@ -1,10 +1,10 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
-import { Loader2, Play, CheckCircle2, XCircle, Sparkles } from 'lucide-react'
+import { Loader2, Play, CheckCircle2, XCircle, Sparkles, AlertCircle } from 'lucide-react'
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000'
 
@@ -27,6 +27,28 @@ export default function TryItDemo() {
   const [error, setError] = useState<string | null>(null)
   const [completedChunks, setCompletedChunks] = useState<number>(0)
   const [totalChunks, setTotalChunks] = useState<number>(4)
+  const [isWarming, setIsWarming] = useState(false)
+  const [apiHealthy, setApiHealthy] = useState(true)
+
+  // Check API health on mount
+  useEffect(() => {
+    const checkHealth = async () => {
+      try {
+        const response = await fetch(`${API_BASE_URL}/healthz`, { 
+          method: 'GET',
+          signal: AbortSignal.timeout(5000)
+        })
+        setApiHealthy(response.ok)
+        if (!response.ok) {
+          setIsWarming(true)
+        }
+      } catch (err) {
+        setApiHealthy(false)
+        setIsWarming(true)
+      }
+    }
+    checkHealth()
+  }, [])
 
   const runDemo = async () => {
     setIsRunning(true)
@@ -38,13 +60,24 @@ export default function TryItDemo() {
     setTotalChunks(4)
 
     try {
-      const response = await fetch(`${API_BASE_URL}/jobs/demo`, {
+      // Show warming banner if API might be cold
+      if (!apiHealthy) {
+        setIsWarming(true)
+      }
+
+      const response = await fetch(`${API_BASE_URL}/v1/jobs/demo`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ n: 1000, chunks: 4 })
       })
+
+      // If successful, API is warmed up
+      if (response.ok) {
+        setIsWarming(false)
+        setApiHealthy(true)
+      }
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ detail: 'Failed to start demo' }))
@@ -57,7 +90,7 @@ export default function TryItDemo() {
 
       const pollInterval = setInterval(async () => {
         try {
-          const statusResponse = await fetch(`${API_BASE_URL}/jobs/demo/${data.job_id}`)
+          const statusResponse = await fetch(`${API_BASE_URL}/v1/jobs/demo/${data.job_id}`)
           
           if (!statusResponse.ok) {
             throw new Error('Failed to fetch job status')
@@ -105,6 +138,16 @@ export default function TryItDemo() {
 
   return (
     <Card className="border-slate-800/50 bg-gradient-to-br from-slate-900/95 to-slate-800/95 backdrop-blur-xl shadow-2xl">
+      {isWarming && (
+        <div className="bg-yellow-500/10 border-b border-yellow-500/20 px-4 py-3">
+          <div className="flex items-center gap-2">
+            <AlertCircle className="h-4 w-4 text-yellow-400 flex-shrink-0" />
+            <p className="text-xs text-yellow-300">
+              <strong className="font-semibold">Warming up server...</strong> First request may take 30-60s on free tier. Please wait.
+            </p>
+          </div>
+        </div>
+      )}
       <CardHeader>
         <div className="flex items-center gap-3">
           <div className="p-2 rounded-lg bg-gradient-to-br from-blue-500/20 to-purple-500/20">
@@ -175,6 +218,19 @@ export default function TryItDemo() {
               <div className="flex justify-between text-xs text-slate-400">
                 <span>Chunks: {completedChunks}/{totalChunks}</span>
                 <span>{progressPercentage}% complete</span>
+              </div>
+              {/* Visual chunk bars */}
+              <div className="flex gap-1 mt-2">
+                {Array.from({ length: totalChunks }).map((_, i) => (
+                  <div
+                    key={i}
+                    className={`flex-1 h-2 rounded-full transition-all ${
+                      i < completedChunks
+                        ? 'bg-gradient-to-r from-emerald-500 to-blue-500'
+                        : 'bg-slate-800'
+                    }`}
+                  />
+                ))}
               </div>
             </div>
 

@@ -7,13 +7,20 @@ services:
       - "6379:6379"
     volumes:
       - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
 
   api:
     build:
       context: .
       dockerfile: backend/Dockerfile
     depends_on:
-      - redis
+      redis:
+        condition: service_healthy
     env_file:
       - .env
     ports:
@@ -21,18 +28,33 @@ services:
     volumes:
       - ./backend/app:/app/app:ro
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/healthz"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
 
   worker:
     build:
       context: .
       dockerfile: worker/Dockerfile
     depends_on:
-      - redis
+      redis:
+        condition: service_healthy
+      api:
+        condition: service_healthy
     env_file:
       - .env
     volumes:
       - ./backend/app:/app/app:ro
     command: python worker_entry.py
+    healthcheck:
+      test: ["CMD", "python", "-c", "from celery_app import celery_app; exit(0 if celery_app.control.inspect().stats() else 1)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
 
   frontend:
     build:
@@ -43,7 +65,8 @@ services:
         - NEXT_PUBLIC_SUPABASE_URL=${NEXT_PUBLIC_SUPABASE_URL:-https://placeholder.supabase.co}
         - NEXT_PUBLIC_SUPABASE_ANON_KEY=${NEXT_PUBLIC_SUPABASE_ANON_KEY:-placeholder-key}
     depends_on:
-      - api
+      api:
+        condition: service_healthy
     env_file:
       - .env
     environment:
@@ -52,6 +75,12 @@ services:
       - NEXT_PUBLIC_SUPABASE_ANON_KEY=${NEXT_PUBLIC_SUPABASE_ANON_KEY:-placeholder-key}
     ports:
       - "3000:3000"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 40s
 
 volumes:
   redis-data:
