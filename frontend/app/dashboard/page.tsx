@@ -624,7 +624,6 @@ export default function DashboardPage() {
               </div>
             </CardHeader>
             <CardContent className="space-y-6 md:space-y-8">
-              {/* Premium Progress Bar */}
               <div className="space-y-3 md:space-y-4">
                 <div className="relative">
                   <Progress value={progressPercentage} className="h-4 md:h-5 bg-slate-950/80 border border-slate-800/50 shadow-inner" />
@@ -637,90 +636,21 @@ export default function DashboardPage() {
                 </div>
               </div>
 
-              {/* Individual Chunk Progress - Enhanced */}
+              {/* Compact Chunk Progress Bars */}
               {totalChunks > 0 && status !== 'idle' && (
-                <div className="space-y-3">
-                  <h3 className="text-sm md:text-base font-semibold text-slate-300 flex items-center gap-2">
-                    <div className="w-1 h-4 bg-gradient-to-b from-blue-500 to-purple-500 rounded-full" />
-                    Chunk Progress
-                  </h3>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {Array.from({ length: totalChunks }, (_, i) => {
-                      const isCompleted = i < completedChunks
-                      const isProcessing = i === completedChunks && status === 'running'
-                      
-                      return (
-                        <div 
-                          key={i} 
-                          className={`relative overflow-hidden rounded-xl border transition-all duration-500 ${
-                            isCompleted 
-                              ? 'bg-gradient-to-br from-emerald-500/20 to-emerald-600/10 border-emerald-500/30 shadow-lg shadow-emerald-500/20' 
-                              : isProcessing
-                              ? 'bg-gradient-to-br from-blue-500/20 to-purple-500/10 border-blue-500/30 shadow-lg shadow-blue-500/20 animate-pulse'
-                              : 'bg-slate-900/50 border-slate-800/50'
-                          }`}
-                        >
-                          <div className="p-4 flex items-center justify-between">
-                            <div className="flex items-center gap-3">
-                              <div className={`relative flex items-center justify-center w-10 h-10 rounded-lg transition-all duration-500 ${
-                                isCompleted 
-                                  ? 'bg-emerald-500/20' 
-                                  : isProcessing 
-                                  ? 'bg-blue-500/20' 
-                                  : 'bg-slate-800/50'
-                              }`}>
-                                {isCompleted && (
-                                  <CheckCircle2 className="w-5 h-5 text-emerald-400" />
-                                )}
-                                {isProcessing && (
-                                  <Loader2 className="w-5 h-5 text-blue-400 animate-spin" />
-                                )}
-                                {!isCompleted && !isProcessing && (
-                                  <Clock className="w-5 h-5 text-slate-500" />
-                                )}
-                              </div>
-                              <div>
-                                <p className={`text-sm font-semibold ${
-                                  isCompleted 
-                                    ? 'text-emerald-400' 
-                                    : isProcessing 
-                                    ? 'text-blue-400' 
-                                    : 'text-slate-400'
-                                }`}>
-                                  Chunk {i + 1}
-                                </p>
-                                <p className="text-xs text-slate-500">
-                                  {isCompleted 
-                                    ? 'Completed' 
-                                    : isProcessing 
-                                    ? 'Processing...' 
-                                    : 'Pending'}
-                                </p>
-                              </div>
-                            </div>
-                            
-                            {/* Animated background effect for processing */}
-                            {isProcessing && (
-                              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-blue-500/10 to-transparent animate-shimmer" />
-                            )}
-                          </div>
-                          
-                          {/* Progress bar for each chunk */}
-                          <div className="h-1 bg-slate-950/50">
-                            <div 
-                              className={`h-full transition-all duration-500 ${
-                                isCompleted 
-                                  ? 'w-full bg-gradient-to-r from-emerald-500 to-emerald-400' 
-                                  : isProcessing 
-                                  ? 'w-1/2 bg-gradient-to-r from-blue-500 to-purple-500 animate-pulse' 
-                                  : 'w-0 bg-slate-700'
-                              }`}
-                            />
-                          </div>
-                        </div>
-                      )
-                    })}
-                  </div>
+                <div className="flex gap-1.5 md:gap-2">
+                  {Array.from({ length: totalChunks }).map((_, i) => (
+                    <div
+                      key={i}
+                      className={`flex-1 h-2 md:h-2.5 rounded-full transition-all duration-500 ${
+                        i < completedChunks
+                          ? 'bg-gradient-to-r from-emerald-500 to-emerald-400 shadow-lg shadow-emerald-500/50'
+                          : i === completedChunks && status === 'running'
+                          ? 'bg-gradient-to-r from-blue-500 to-purple-500 animate-pulse shadow-lg shadow-blue-500/50'
+                          : 'bg-slate-800/80'
+                      }`}
+                    />
+                  ))}
                 </div>
               )}
 
