@@ -417,9 +417,10 @@ docker compose run --rm api pytest --cov=app --cov-report=html
 
 ## ❓ Quick Troubleshooting FAQ
 
-### API Returns 500 Error
-- **Railway cold start**: First request may take 30s to wake the server
-- **Solution**: Wait 30 seconds and retry, or check `/monitoring/health` endpoint
+### API Returns 500 Error or /docs Not Loading
+- **Railway cold start**: First request may take 30-60s to wake the server (free tier sleeps after inactivity)
+- **Solution**: Wait 30-60 seconds and retry, or check `/monitoring/health` endpoint first
+- **Tip**: The in-app health indicator (green dot in navbar) shows real-time API status
 
 ### CORS Errors in Browser
 - **Cause**: Frontend URL not in `BACKEND_CORS_ORIGINS`

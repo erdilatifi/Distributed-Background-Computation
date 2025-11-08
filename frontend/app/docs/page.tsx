@@ -159,7 +159,7 @@ export default function DocsPage() {
                   <div className="flex-1">
                     <h4 className="font-semibold text-white mb-1">Clone the Repository</h4>
                     <pre className="bg-slate-950 p-3 rounded-lg text-sm text-slate-300 overflow-x-auto">
-                      git clone &lt;repository-url&gt;{'\n'}cd python-project
+                      git clone https://github.com/erdilatifi/Distributed-Background-Computation.git{'\n'}cd Distributed-Background-Computation
                     </pre>
                   </div>
                 </div>
