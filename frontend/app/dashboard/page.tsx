@@ -56,6 +56,7 @@ export default function DashboardPage() {
   const [detail, setDetail] = useState<string>('Submit a job to begin.')
   const [error, setError] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false)
+  const [copiedJobId, setCopiedJobId] = useState<boolean>(false)
   
   // Job history and stats
   const [jobHistory, setJobHistory] = useState<any[]>([])
@@ -687,9 +688,33 @@ export default function DashboardPage() {
                   )}
                   {jobId && (
                     <div className="pt-2 border-t border-slate-800">
-                      <p className="text-xs text-muted-foreground">
-                        Job ID: <span className="font-mono text-foreground">{jobId}</span>
-                      </p>
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="text-xs text-muted-foreground">
+                          Job ID: <span className="font-mono text-foreground">{jobId}</span>
+                        </p>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => {
+                            navigator.clipboard.writeText(jobId)
+                            setCopiedJobId(true)
+                            setTimeout(() => setCopiedJobId(false), 2000)
+                          }}
+                          className="h-6 px-2 text-xs hover:bg-emerald-500/10 hover:text-emerald-400 transition-colors"
+                        >
+                          {copiedJobId ? (
+                            <>
+                              <Check className="h-3 w-3 mr-1" />
+                              Copied
+                            </>
+                          ) : (
+                            <>
+                              <Copy className="h-3 w-3 mr-1" />
+                              Copy
+                            </>
+                          )}
+                        </Button>
+                      </div>
                     </div>
                   )}
                 </CardContent>

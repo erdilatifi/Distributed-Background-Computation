@@ -142,83 +142,6 @@ export default function DocsPage() {
             </CardContent>
           </Card>
 
-          {/* Getting Started */}
-          <Card className="border-slate-800 bg-slate-900/70 backdrop-blur">
-            <CardHeader>
-              <CardTitle>Getting Started</CardTitle>
-              <CardDescription>
-                Quick start guide to run the application locally
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-3">
-                <div className="flex items-start gap-3">
-                  <div className="flex items-center justify-center w-6 h-6 rounded-full bg-blue-500/20 text-blue-400 text-sm font-semibold mt-0.5">
-                    1
-                  </div>
-                  <div className="flex-1">
-                    <h4 className="font-semibold text-white mb-1">Clone the Repository</h4>
-                    <pre className="bg-slate-950 p-3 rounded-lg text-sm text-slate-300 overflow-x-auto">
-                      git clone https://github.com/erdilatifi/Distributed-Background-Computation.git{'\n'}cd Distributed-Background-Computation
-                    </pre>
-                  </div>
-                </div>
-
-                <div className="flex items-start gap-3">
-                  <div className="flex items-center justify-center w-6 h-6 rounded-full bg-blue-500/20 text-blue-400 text-sm font-semibold mt-0.5">
-                    2
-                  </div>
-                  <div className="flex-1">
-                    <h4 className="font-semibold text-white mb-1">Configure Environment</h4>
-                    <pre className="bg-slate-950 p-3 rounded-lg text-sm text-slate-300 overflow-x-auto">
-                      cp .env.example .env{'\n'}# Add your Supabase credentials
-                    </pre>
-                  </div>
-                </div>
-
-                <div className="flex items-start gap-3">
-                  <div className="flex items-center justify-center w-6 h-6 rounded-full bg-blue-500/20 text-blue-400 text-sm font-semibold mt-0.5">
-                    3
-                  </div>
-                  <div className="flex-1">
-                    <h4 className="font-semibold text-white mb-1">Start with Docker</h4>
-                    <pre className="bg-slate-950 p-3 rounded-lg text-sm text-slate-300 overflow-x-auto">
-                      docker compose up --build
-                    </pre>
-                  </div>
-                </div>
-
-                <div className="flex items-start gap-3">
-                  <div className="flex items-center justify-center w-6 h-6 rounded-full bg-emerald-500/20 text-emerald-400 text-sm font-semibold mt-0.5">
-                    ✓
-                  </div>
-                  <div className="flex-1">
-                    <h4 className="font-semibold text-white mb-1">Access the Application</h4>
-                    <div className="space-y-4 text-sm text-slate-300">
-                      <div className="space-y-2">
-                        <p className="font-semibold text-blue-400">Production:</p>
-                        <p>• Frontend: <code className="bg-slate-950 px-2 py-1 rounded">https://distributed-computation.up.railway.app</code></p>
-                        <p>• Backend API: <code className="bg-slate-950 px-2 py-1 rounded">https://distributed-background-computation-production.up.railway.app</code></p>
-                        <div className="flex items-center gap-2">
-                          <p>• API Docs: <code className="bg-slate-950 px-2 py-1 rounded">https://distributed-background-computation-production.up.railway.app/docs</code></p>
-                          {apiHealthy === false && (
-                            <span className="text-xs text-amber-400">(API offline - see in-app docs)</span>
-                          )}
-                        </div>
-                      </div>
-                      <div className="space-y-2">
-                        <p className="font-semibold text-emerald-400">Local:</p>
-                        <p>• Frontend: <code className="bg-slate-950 px-2 py-1 rounded">http://localhost:3000</code></p>
-                        <p>• Backend API: <code className="bg-slate-950 px-2 py-1 rounded">http://localhost:8000</code></p>
-                        <p>• API Docs: <code className="bg-slate-950 px-2 py-1 rounded">http://localhost:8000/docs</code></p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
           {/* API Usage */}
           <Card className="border-slate-800 bg-slate-900/70 backdrop-blur">
             <CardHeader>
@@ -233,8 +156,9 @@ export default function DocsPage() {
                 
                 <div className="space-y-3">
                   <p className="text-sm font-semibold text-blue-400">Production:</p>
-                  <pre className="bg-slate-950 p-4 rounded-lg text-sm text-slate-300 overflow-x-auto border border-slate-700">
-{`POST https://distributed-background-computation-production.up.railway.app/v1/jobs
+                  <CodeBlock
+                    id="api-submit-prod"
+                    code={`POST https://distributed-background-computation-production.up.railway.app/v1/jobs
 Content-Type: application/json
 Authorization: Bearer YOUR_API_TOKEN
 
@@ -242,13 +166,14 @@ Authorization: Bearer YOUR_API_TOKEN
   "n": 1000,
   "chunks": 4
 }`}
-                  </pre>
+                  />
                 </div>
 
                 <div className="space-y-3">
                   <p className="text-sm font-semibold text-emerald-400">Local:</p>
-                  <pre className="bg-slate-950 p-4 rounded-lg text-sm text-slate-300 overflow-x-auto border border-slate-700">
-{`POST http://localhost:8000/v1/jobs
+                  <CodeBlock
+                    id="api-submit-local"
+                    code={`POST http://localhost:8000/v1/jobs
 Content-Type: application/json
 Authorization: Bearer YOUR_API_TOKEN
 
@@ -256,7 +181,7 @@ Authorization: Bearer YOUR_API_TOKEN
   "n": 1000,
   "chunks": 4
 }`}
-                  </pre>
+                  />
                 </div>
               </div>
 
@@ -265,109 +190,26 @@ Authorization: Bearer YOUR_API_TOKEN
                 
                 <div className="space-y-3">
                   <p className="text-sm font-semibold text-blue-400">Production:</p>
-                  <pre className="bg-slate-950 p-4 rounded-lg text-sm text-slate-300 overflow-x-auto border border-slate-700">
-{`GET https://distributed-background-computation-production.up.railway.app/v1/jobs/{job_id}
+                  <CodeBlock
+                    id="api-status-prod"
+                    code={`GET https://distributed-background-computation-production.up.railway.app/v1/jobs/{job_id}
 Authorization: Bearer YOUR_API_TOKEN`}
-                  </pre>
+                  />
                 </div>
 
                 <div className="space-y-3">
                   <p className="text-sm font-semibold text-emerald-400">Local:</p>
-                  <pre className="bg-slate-950 p-4 rounded-lg text-sm text-slate-300 overflow-x-auto border border-slate-700">
-{`GET http://localhost:8000/v1/jobs/{job_id}
+                  <CodeBlock
+                    id="api-status-local"
+                    code={`GET http://localhost:8000/v1/jobs/{job_id}
 Authorization: Bearer YOUR_API_TOKEN`}
-                  </pre>
+                  />
                 </div>
               </div>
 
               <div className="p-4 rounded-lg bg-blue-500/10 border border-blue-500/20">
                 <p className="text-sm text-blue-300">
                   <strong>Tip:</strong> The dashboard provides a user-friendly interface to submit jobs and monitor their progress in real-time via automatic polling (1s).
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Code Verifiability Section */}
-          <Card className="border-slate-800/50 bg-gradient-to-br from-slate-900/90 to-slate-800/90 backdrop-blur-xl shadow-2xl">
-            <CardHeader>
-              <CardTitle className="text-2xl font-bold bg-gradient-to-r from-white to-slate-300 bg-clip-text text-transparent flex items-center gap-2">
-                <FileCode className="h-6 w-6 text-emerald-400" />
-                Code Verifiability
-              </CardTitle>
-              <CardDescription>
-                Direct links to implementation - verify every claimed feature
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid md:grid-cols-2 gap-4">
-                <div className="p-4 rounded-lg bg-slate-950/50 border border-slate-700/50">
-                  <h4 className="font-bold text-white mb-3 flex items-center gap-2">
-                    <Shield className="h-5 w-5 text-blue-400" />
-                    Rate Limiting
-                  </h4>
-                  <p className="text-sm text-slate-400 mb-2">SlowAPI middleware with per-IP and per-user limits</p>
-                  <GitHubLink path="backend/app/main.py" line="44-46" />
-                </div>
-                
-                <div className="p-4 rounded-lg bg-slate-950/50 border border-slate-700/50">
-                  <h4 className="font-bold text-white mb-3 flex items-center gap-2">
-                    <Database className="h-5 w-5 text-purple-400" />
-                    Result Caching
-                  </h4>
-                  <p className="text-sm text-slate-400 mb-2">Intelligent caching in Supabase for repeated computations</p>
-                  <GitHubLink path="backend/app/supabase_client.py" line="80-100" />
-                </div>
-                
-                <div className="p-4 rounded-lg bg-slate-950/50 border border-slate-700/50">
-                  <h4 className="font-bold text-white mb-3 flex items-center gap-2">
-                    <RefreshCw className="h-5 w-5 text-emerald-400" />
-                    Auto Retry Logic
-                  </h4>
-                  <p className="text-sm text-slate-400 mb-2">Celery task retry with exponential backoff</p>
-                  <GitHubLink path="backend/app/tasks.py" line="124-182" />
-                </div>
-                
-                <div className="p-4 rounded-lg bg-slate-950/50 border border-slate-700/50">
-                  <h4 className="font-bold text-white mb-3 flex items-center gap-2">
-                    <Layers className="h-5 w-5 text-amber-400" />
-                    Chunking Logic
-                  </h4>
-                  <p className="text-sm text-slate-400 mb-2">Parallel task distribution across workers</p>
-                  <GitHubLink path="backend/app/tasks.py" line="67-112" />
-                </div>
-                
-                <div className="p-4 rounded-lg bg-slate-950/50 border border-slate-700/50">
-                  <h4 className="font-bold text-white mb-3 flex items-center gap-2">
-                    <Lock className="h-5 w-5 text-red-400" />
-                    Row Level Security
-                  </h4>
-                  <p className="text-sm text-slate-400 mb-2">PostgreSQL RLS policies on jobs table</p>
-                  <a
-                    href="https://github.com/erdilatifi/Distributed-Background-Computation#security"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1 text-xs text-blue-400 hover:text-blue-300 transition-colors"
-                  >
-                    <Github className="h-3 w-3" />
-                    View SQL policies
-                    <ExternalLink className="h-3 w-3" />
-                  </a>
-                </div>
-                
-                <div className="p-4 rounded-lg bg-slate-950/50 border border-slate-700/50">
-                  <h4 className="font-bold text-white mb-3 flex items-center gap-2">
-                    <BarChart className="h-5 w-5 text-pink-400" />
-                    Monitoring & Metrics
-                  </h4>
-                  <p className="text-sm text-slate-400 mb-2">Prometheus metrics and health checks</p>
-                  <GitHubLink path="backend/app/monitoring.py" line="24-101" />
-                </div>
-              </div>
-              
-              <div className="mt-4 p-4 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
-                <p className="text-sm text-emerald-300">
-                  <strong>Transparency:</strong> All claimed features are verifiable in the public GitHub repository. Click any link above to inspect the actual implementation.
                 </p>
               </div>
             </CardContent>
@@ -549,8 +391,9 @@ Authorization: Bearer YOUR_API_TOKEN`}
                 
                 <div className="space-y-3">
                   <p className="text-sm font-semibold text-blue-400">Production:</p>
-                  <pre className="bg-slate-950 p-4 rounded-lg text-xs text-slate-300 overflow-x-auto border border-slate-700">
-{`curl -X POST https://distributed-background-computation-production.up.railway.app/v1/jobs \\
+                  <CodeBlock
+                    id="curl-submit-prod"
+                    code={`curl -X POST https://distributed-background-computation-production.up.railway.app/v1/jobs \\
   -H "Content-Type: application/json" \\
   -H "Authorization: Bearer YOUR_API_TOKEN" \\
   -d '{
@@ -558,13 +401,15 @@ Authorization: Bearer YOUR_API_TOKEN`}
     "chunks": 4
   }'
 
-# Response: {"job_id": "abc123...", "status": "pending"}`}</pre>
+# Response: {"job_id": "abc123...", "status": "pending"}`}
+                  />
                 </div>
 
                 <div className="space-y-3">
                   <p className="text-sm font-semibold text-emerald-400">Local:</p>
-                  <pre className="bg-slate-950 p-4 rounded-lg text-xs text-slate-300 overflow-x-auto border border-slate-700">
-{`curl -X POST http://localhost:8000/v1/jobs \\
+                  <CodeBlock
+                    id="curl-submit-local"
+                    code={`curl -X POST http://localhost:8000/v1/jobs \\
   -H "Content-Type: application/json" \\
   -H "Authorization: Bearer YOUR_API_TOKEN" \\
   -d '{
@@ -572,7 +417,8 @@ Authorization: Bearer YOUR_API_TOKEN`}
     "chunks": 4
   }'
 
-# Response: {"job_id": "abc123...", "status": "pending"}`}</pre>
+# Response: {"job_id": "abc123...", "status": "pending"}`}
+                  />
                 </div>
               </div>
 
@@ -585,24 +431,28 @@ Authorization: Bearer YOUR_API_TOKEN`}
                 
                 <div className="space-y-3">
                   <p className="text-sm font-semibold text-blue-400">Production:</p>
-                  <pre className="bg-slate-950 p-4 rounded-lg text-xs text-slate-300 overflow-x-auto border border-slate-700">
-{`curl -X GET https://distributed-background-computation-production.up.railway.app/v1/jobs/YOUR_JOB_ID \\
+                  <CodeBlock
+                    id="curl-status-prod"
+                    code={`curl -X GET https://distributed-background-computation-production.up.railway.app/v1/jobs/YOUR_JOB_ID \\
   -H "Authorization: Bearer YOUR_API_TOKEN"
 
 # Response:
 # {"job_id": "abc123...", "status": "completed", "progress": 1.0,
-#  "completed_chunks": 4, "total_chunks": 4, "result": 500500}`}</pre>
+#  "completed_chunks": 4, "total_chunks": 4, "result": 500500}`}
+                  />
                 </div>
 
                 <div className="space-y-3">
                   <p className="text-sm font-semibold text-emerald-400">Local:</p>
-                  <pre className="bg-slate-950 p-4 rounded-lg text-xs text-slate-300 overflow-x-auto border border-slate-700">
-{`curl -X GET http://localhost:8000/v1/jobs/YOUR_JOB_ID \\
+                  <CodeBlock
+                    id="curl-status-local"
+                    code={`curl -X GET http://localhost:8000/v1/jobs/YOUR_JOB_ID \\
   -H "Authorization: Bearer YOUR_API_TOKEN"
 
 # Response:
 # {"job_id": "abc123...", "status": "completed", "progress": 1.0,
-#  "completed_chunks": 4, "total_chunks": 4, "result": 500500}`}</pre>
+#  "completed_chunks": 4, "total_chunks": 4, "result": 500500}`}
+                  />
                 </div>
               </div>
 
@@ -615,8 +465,9 @@ Authorization: Bearer YOUR_API_TOKEN`}
                 
                 <div className="space-y-3">
                   <p className="text-sm font-semibold text-blue-400">Production:</p>
-                  <pre className="bg-slate-950 p-4 rounded-lg text-xs text-slate-300 overflow-x-auto border border-slate-700">
-{`const API_URL = 'https://distributed-background-computation-production.up.railway.app';
+                  <CodeBlock
+                    id="js-example-prod"
+                    code={`const API_URL = 'https://distributed-background-computation-production.up.railway.app';
 
 const response = await fetch(\`\${API_URL}/v1/jobs\`, {
   method: 'POST',
@@ -638,13 +489,15 @@ const checkStatus = async () => {
   if (status.status === 'completed') console.log('Result:', status.result);
 };
 
-setInterval(checkStatus, 1000);`}</pre>
+setInterval(checkStatus, 1000);`}
+                  />
                 </div>
 
                 <div className="space-y-3">
                   <p className="text-sm font-semibold text-emerald-400">Local:</p>
-                  <pre className="bg-slate-950 p-4 rounded-lg text-xs text-slate-300 overflow-x-auto border border-slate-700">
-{`const API_URL = 'http://localhost:8000';
+                  <CodeBlock
+                    id="js-example-local"
+                    code={`const API_URL = 'http://localhost:8000';
 
 const response = await fetch(\`\${API_URL}/v1/jobs\`, {
   method: 'POST',
@@ -666,7 +519,8 @@ const checkStatus = async () => {
   if (status.status === 'completed') console.log('Result:', status.result);
 };
 
-setInterval(checkStatus, 1000);`}</pre>
+setInterval(checkStatus, 1000);`}
+                  />
                 </div>
               </div>
 
