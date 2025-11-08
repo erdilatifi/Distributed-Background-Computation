@@ -52,7 +52,7 @@ export default function Navbar() {
 
   const navLinks = [
     { href: '/', label: 'Home', icon: Sparkles },
-    ...(user ? [{ href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard }] : []),
+    { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { href: '/docs', label: 'Docs', icon: BookOpen },
   ]
 
