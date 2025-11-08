@@ -50,9 +50,9 @@ export default function RegisterPage() {
     } else {
       setLoading(false)
       toast.success('Account created!', {
-        description: 'Please check your email to confirm your account.',
+        description: 'Redirecting to dashboard...',
       })
-      setTimeout(() => router.push('/login'), 2000)
+      setTimeout(() => router.push('/dashboard'), 2000)
     }
   }
 

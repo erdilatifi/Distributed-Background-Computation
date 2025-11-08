@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Zap, Shield, BarChart3, Rocket, CheckCircle2, ArrowRight, Users, Database, Sparkles, TrendingUp, Code2, Globe, Layers, Terminal } from 'lucide-react'
 import Navbar from '@/components/Navbar'
+import TryItDemo from '@/components/TryItDemo'
 
 export default function Home() {
   return (
@@ -132,6 +133,12 @@ export default function Home() {
                 </Link>
               ))}
             </div>
+          </div>
+        </section>
+
+        <section className="container mx-auto px-4 py-16">
+          <div className="max-w-2xl mx-auto">
+            <TryItDemo />
           </div>
         </section>
 

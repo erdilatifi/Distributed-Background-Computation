@@ -161,7 +161,7 @@ export default function Navbar() {
                   >
                     <Link href="/register">
                       <Sparkles className="h-4 w-4 mr-2" />
-                      Get Started
+                      Get Started Free
                     </Link>
                   </Button>
                 </>
@@ -265,7 +265,7 @@ export default function Navbar() {
                   >
                     <Link href="/register" onClick={() => setMobileMenuOpen(false)}>
                       <Sparkles className="h-5 w-5 animate-pulse" />
-                      Get Started
+                      Get Started Free
                     </Link>
                   </Button>
                 </div>

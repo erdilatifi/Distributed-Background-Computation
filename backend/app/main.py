@@ -449,6 +449,108 @@ async def get_user_stats(
 
 
 # ============================================
+# DEMO ENDPOINTS (PUBLIC, NO AUTH REQUIRED)
+# ============================================
+
+@app.post(
+    "/jobs/demo",
+    response_model=schemas.JobCreated,
+    status_code=status.HTTP_202_ACCEPTED,
+    summary="Create a demo computation job (no auth required)",
+    tags=["demo"]
+)
+@limiter.limit("5/minute")
+async def create_demo_job(
+    request: Request,
+    payload: schemas.JobRequest
+) -> schemas.JobCreated:
+    """
+    Create a demo computation job without authentication.
+    
+    Limited to smaller values for public demo:
+    - n: max 10,000
+    - chunks: max 8
+    """
+    if payload.n <= 0 or payload.n > 10000:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Demo: n must be between 1 and 10,000"
+        )
+    
+    if payload.chunks <= 0 or payload.chunks > 8:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Demo: chunks must be between 1 and 8"
+        )
+    
+    job_id = str(uuid.uuid4())
+    
+    record_job_created()
+    
+    from .config import get_async_redis_client
+    redis = get_async_redis_client()
+    await redis.hset(
+        f"progress:{job_id}",
+        mapping={
+            "status": "pending",
+            "total_chunks": payload.chunks,
+            "completed_chunks": 0,
+            "progress": "0.0",
+            "detail": "Demo job queued.",
+        },
+    )
+    
+    tasks.orchestrate_range_sum.delay(job_id, payload.n, payload.chunks)
+    
+    return schemas.JobCreated(job_id=job_id, status="pending")
+
+
+@app.get(
+    "/jobs/demo/{job_id}",
+    response_model=schemas.JobStatus,
+    summary="Get demo job status (no auth required)",
+    tags=["demo"]
+)
+async def get_demo_job_status(job_id: str) -> schemas.JobStatus:
+    """
+    Get the current status of a demo job without authentication.
+    """
+    from .config import get_async_redis_client
+    redis = get_async_redis_client()
+    
+    progress_key = f"progress:{job_id}"
+    exists = await redis.exists(progress_key)
+    if not exists:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Demo job not found.")
+
+    progress_raw = await redis.hgetall(progress_key)
+    total_chunks = int(progress_raw.get("total_chunks", 1))
+    completed_chunks = int(progress_raw.get("completed_chunks", 0))
+    progress_value = progress_raw.get("progress", "0") or "0"
+    try:
+        progress_float = float(progress_value)
+    except (TypeError, ValueError):
+        progress_float = 0.0
+
+    result_key = f"result:{job_id}"
+    result_raw = await redis.get(result_key)
+    result_value = int(result_raw) if result_raw is not None else None
+
+    status_value = progress_raw.get("status", "unknown")
+    detail_value = progress_raw.get("detail")
+
+    return schemas.JobStatus(
+        job_id=job_id,
+        status=status_value,
+        progress=min(max(progress_float, 0.0), 1.0),
+        completed_chunks=completed_chunks,
+        total_chunks=total_chunks if total_chunks > 0 else 1,
+        result=result_value,
+        detail=detail_value
+    )
+
+
+# ============================================
 # PUBLIC ENDPOINTS (NO AUTH REQUIRED)
 # ============================================
 
