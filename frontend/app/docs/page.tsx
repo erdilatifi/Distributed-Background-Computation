@@ -15,7 +15,7 @@ export default function DocsPage() {
   useEffect(() => {
     const checkHealth = async () => {
       try {
-        const response = await fetch(`${apiUrl}/monitoring/health`, { cache: 'no-store' })
+        const response = await fetch(`${apiUrl}/healthz`, { cache: 'no-store' })
         setApiHealthy(response.ok)
       } catch {
         setApiHealthy(false)
@@ -234,7 +234,7 @@ export default function DocsPage() {
                 <div className="space-y-3">
                   <p className="text-sm font-semibold text-blue-400">Production:</p>
                   <pre className="bg-slate-950 p-4 rounded-lg text-sm text-slate-300 overflow-x-auto border border-slate-700">
-{`POST https://distributed-background-computation-production.up.railway.app/jobs
+{`POST https://distributed-background-computation-production.up.railway.app/v1/jobs
 Content-Type: application/json
 Authorization: Bearer YOUR_API_TOKEN
 
@@ -248,7 +248,7 @@ Authorization: Bearer YOUR_API_TOKEN
                 <div className="space-y-3">
                   <p className="text-sm font-semibold text-emerald-400">Local:</p>
                   <pre className="bg-slate-950 p-4 rounded-lg text-sm text-slate-300 overflow-x-auto border border-slate-700">
-{`POST http://localhost:8000/jobs
+{`POST http://localhost:8000/v1/jobs
 Content-Type: application/json
 Authorization: Bearer YOUR_API_TOKEN
 
@@ -266,7 +266,7 @@ Authorization: Bearer YOUR_API_TOKEN
                 <div className="space-y-3">
                   <p className="text-sm font-semibold text-blue-400">Production:</p>
                   <pre className="bg-slate-950 p-4 rounded-lg text-sm text-slate-300 overflow-x-auto border border-slate-700">
-{`GET https://distributed-background-computation-production.up.railway.app/jobs/{job_id}
+{`GET https://distributed-background-computation-production.up.railway.app/v1/jobs/{job_id}
 Authorization: Bearer YOUR_API_TOKEN`}
                   </pre>
                 </div>
@@ -274,7 +274,7 @@ Authorization: Bearer YOUR_API_TOKEN`}
                 <div className="space-y-3">
                   <p className="text-sm font-semibold text-emerald-400">Local:</p>
                   <pre className="bg-slate-950 p-4 rounded-lg text-sm text-slate-300 overflow-x-auto border border-slate-700">
-{`GET http://localhost:8000/jobs/{job_id}
+{`GET http://localhost:8000/v1/jobs/{job_id}
 Authorization: Bearer YOUR_API_TOKEN`}
                   </pre>
                 </div>
@@ -550,7 +550,7 @@ Authorization: Bearer YOUR_API_TOKEN`}
                 <div className="space-y-3">
                   <p className="text-sm font-semibold text-blue-400">Production:</p>
                   <pre className="bg-slate-950 p-4 rounded-lg text-xs text-slate-300 overflow-x-auto border border-slate-700">
-{`curl -X POST https://distributed-background-computation-production.up.railway.app/jobs \\
+{`curl -X POST https://distributed-background-computation-production.up.railway.app/v1/jobs \\
   -H "Content-Type: application/json" \\
   -H "Authorization: Bearer YOUR_API_TOKEN" \\
   -d '{
@@ -564,7 +564,7 @@ Authorization: Bearer YOUR_API_TOKEN`}
                 <div className="space-y-3">
                   <p className="text-sm font-semibold text-emerald-400">Local:</p>
                   <pre className="bg-slate-950 p-4 rounded-lg text-xs text-slate-300 overflow-x-auto border border-slate-700">
-{`curl -X POST http://localhost:8000/jobs \\
+{`curl -X POST http://localhost:8000/v1/jobs \\
   -H "Content-Type: application/json" \\
   -H "Authorization: Bearer YOUR_API_TOKEN" \\
   -d '{
@@ -586,7 +586,7 @@ Authorization: Bearer YOUR_API_TOKEN`}
                 <div className="space-y-3">
                   <p className="text-sm font-semibold text-blue-400">Production:</p>
                   <pre className="bg-slate-950 p-4 rounded-lg text-xs text-slate-300 overflow-x-auto border border-slate-700">
-{`curl -X GET https://distributed-background-computation-production.up.railway.app/jobs/YOUR_JOB_ID \\
+{`curl -X GET https://distributed-background-computation-production.up.railway.app/v1/jobs/YOUR_JOB_ID \\
   -H "Authorization: Bearer YOUR_API_TOKEN"
 
 # Response:
@@ -597,7 +597,7 @@ Authorization: Bearer YOUR_API_TOKEN`}
                 <div className="space-y-3">
                   <p className="text-sm font-semibold text-emerald-400">Local:</p>
                   <pre className="bg-slate-950 p-4 rounded-lg text-xs text-slate-300 overflow-x-auto border border-slate-700">
-{`curl -X GET http://localhost:8000/jobs/YOUR_JOB_ID \\
+{`curl -X GET http://localhost:8000/v1/jobs/YOUR_JOB_ID \\
   -H "Authorization: Bearer YOUR_API_TOKEN"
 
 # Response:
@@ -618,7 +618,7 @@ Authorization: Bearer YOUR_API_TOKEN`}
                   <pre className="bg-slate-950 p-4 rounded-lg text-xs text-slate-300 overflow-x-auto border border-slate-700">
 {`const API_URL = 'https://distributed-background-computation-production.up.railway.app';
 
-const response = await fetch(\`\${API_URL}/jobs\`, {
+const response = await fetch(\`\${API_URL}/v1/jobs\`, {
   method: 'POST',
   headers: {
     'Content-Type': 'application/json',
@@ -630,7 +630,7 @@ const response = await fetch(\`\${API_URL}/jobs\`, {
 const { job_id } = await response.json();
 
 const checkStatus = async () => {
-  const res = await fetch(\`\${API_URL}/jobs/\${job_id}\`, {
+  const res = await fetch(\`\${API_URL}/v1/jobs/\${job_id}\`, {
     headers: { 'Authorization': 'Bearer YOUR_API_TOKEN' }
   });
   const status = await res.json();
@@ -646,7 +646,7 @@ setInterval(checkStatus, 1000);`}</pre>
                   <pre className="bg-slate-950 p-4 rounded-lg text-xs text-slate-300 overflow-x-auto border border-slate-700">
 {`const API_URL = 'http://localhost:8000';
 
-const response = await fetch(\`\${API_URL}/jobs\`, {
+const response = await fetch(\`\${API_URL}/v1/jobs\`, {
   method: 'POST',
   headers: {
     'Content-Type': 'application/json',
@@ -658,7 +658,7 @@ const response = await fetch(\`\${API_URL}/jobs\`, {
 const { job_id } = await response.json();
 
 const checkStatus = async () => {
-  const res = await fetch(\`\${API_URL}/jobs/\${job_id}\`, {
+  const res = await fetch(\`\${API_URL}/v1/jobs/\${job_id}\`, {
     headers: { 'Authorization': 'Bearer YOUR_API_TOKEN' }
   });
   const status = await res.json();
@@ -680,21 +680,21 @@ setInterval(checkStatus, 1000);`}</pre>
                   <div className="p-3 rounded-lg bg-slate-950/50 border border-slate-700/50">
                     <div className="flex items-center gap-2 mb-1">
                       <span className="px-2 py-0.5 rounded bg-blue-500/20 text-blue-400 text-xs font-mono">POST</span>
-                      <code className="text-sm text-slate-300">/jobs</code>
+                      <code className="text-sm text-slate-300">/v1/jobs</code>
                     </div>
                     <p className="text-xs text-slate-400">Create a new computation job</p>
                   </div>
                   <div className="p-3 rounded-lg bg-slate-950/50 border border-slate-700/50">
                     <div className="flex items-center gap-2 mb-1">
                       <span className="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 text-xs font-mono">GET</span>
-                      <code className="text-sm text-slate-300">/jobs/:job_id</code>
+                      <code className="text-sm text-slate-300">/v1/jobs/:job_id</code>
                     </div>
                     <p className="text-xs text-slate-400">Get job status and result</p>
                   </div>
                   <div className="p-3 rounded-lg bg-slate-950/50 border border-slate-700/50">
                     <div className="flex items-center gap-2 mb-1">
                       <span className="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 text-xs font-mono">GET</span>
-                      <code className="text-sm text-slate-300">/jobs</code>
+                      <code className="text-sm text-slate-300">/v1/jobs</code>
                     </div>
                     <p className="text-xs text-slate-400">List all your jobs</p>
                   </div>

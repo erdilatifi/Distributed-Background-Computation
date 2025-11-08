@@ -73,11 +73,8 @@ export default function DashboardPage() {
   // Fetch job history and stats
   const fetchJobHistory = useCallback(async () => {
     if (!user) {
-      console.log('No user found, skipping job history fetch')
       return
     }
-    
-    console.log('Fetching job history for user:', user.id)
     setHistoryError(null)
     
     try {
@@ -92,7 +89,6 @@ export default function DashboardPage() {
         setHistoryError(`Database error: ${error.message}`)
         setJobHistory([])
       } else {
-        console.log('Job history fetched successfully:', data?.length || 0, 'jobs')
         setJobHistory(data || [])
       }
     } catch (err: any) {
@@ -106,11 +102,8 @@ export default function DashboardPage() {
 
   const fetchUserStats = useCallback(async () => {
     if (!user) {
-      console.log('No user found, skipping stats fetch')
       return
     }
-    
-    console.log('Fetching user stats for user:', user.id)
     setStatsError(null)
     
     try {
@@ -126,8 +119,6 @@ export default function DashboardPage() {
         return
       }
       
-      console.log('Stats data fetched:', data?.length || 0, 'jobs')
-      
       const stats = {
         totalJobs: data?.length || 0,
         completedJobs: data?.filter(j => j.status === 'completed').length || 0,
@@ -136,7 +127,6 @@ export default function DashboardPage() {
         totalChunks: data?.reduce((acc, j) => acc + (j.total_chunks || 0), 0) || 0
       }
       
-      console.log('Computed stats:', stats)
       setUserStats(stats)
     } catch (err: any) {
       console.error('Failed to fetch stats:', err)
@@ -147,7 +137,6 @@ export default function DashboardPage() {
 
   useEffect(() => {
     const checkUser = async () => {
-      console.log('Checking user authentication...')
       const { data: { user }, error } = await supabase.auth.getUser()
       
       if (error) {
@@ -155,10 +144,8 @@ export default function DashboardPage() {
       }
       
       if (!user) {
-        console.log('No authenticated user, redirecting to login')
         router.push('/login')
       } else {
-        console.log('User authenticated:', user.id, user.email)
         setUser(user)
         setLoading(false)
       }
@@ -167,7 +154,6 @@ export default function DashboardPage() {
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      console.log('Auth state changed:', _event, session?.user?.email)
       if (!session) {
         router.push('/login')
       } else {
@@ -260,7 +246,7 @@ export default function DashboardPage() {
     if (!jobId) return
 
     try {
-      const response = await fetch(`${API_BASE_URL}/jobs/${jobId}`, {
+      const response = await fetch(`${API_BASE_URL}/v1/jobs/${jobId}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -373,7 +359,7 @@ export default function DashboardPage() {
       }
 
       const payload: JobRequestPayload = { n: nValue, chunks: chunksValue }
-      const response = await fetch(`${API_BASE_URL}/jobs`, {
+      const response = await fetch(`${API_BASE_URL}/v1/jobs`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -37,7 +37,7 @@ export default function Navbar() {
   useEffect(() => {
     const checkHealth = async () => {
       try {
-        const response = await fetch(`${apiUrl}/monitoring/health`, {
+        const response = await fetch(`${apiUrl}/healthz`, {
           method: 'GET',
           cache: 'no-store'
         })
