@@ -50,6 +50,9 @@ User submits job → FastAPI splits into chunks → Celery workers process in pa
 |---------|-------------|
 | 🔄 **Distributed Computing** | Split heavy tasks across multiple workers for parallel processing |
 | 📊 **Real-Time Progress** | Live progress tracking with animated UI updates |
+| 🎮 **Try It Demo** | Public demo widget on homepage - no signup required |
+| 🔐 **Authentication** | Supabase auth with JWT tokens and user profiles |
+| 🎯 **Dashboard** | Personal dashboard with job history and API token management |
 | 🎨 **Modern UI** | Next.js + shadcn/ui + Tailwind CSS with beautiful dark theme |
 | 🐳 **Fully Containerized** | One command to run everything: `docker compose up` |
 | 🧪 **Tested** | Pytest suite with 90%+ coverage using Celery eager mode |
@@ -98,10 +101,17 @@ User submits job → FastAPI splits into chunks → Celery workers process in pa
 ├── worker/                  # Celery worker service
 │   ├── Dockerfile
 │   └── worker_entry.py
-├── frontend/                # Next.js application
-│   ├── pages/              # React pages
-│   ├── components/         # shadcn/ui components
-│   ├── styles/             # Tailwind CSS
+├── frontend/                # Next.js 14 application
+│   ├── app/                # App Router pages (Next.js 14)
+│   │   ├── page.tsx       # Homepage with Try It demo
+│   │   ├── dashboard/     # User dashboard
+│   │   ├── login/         # Login page
+│   │   ├── register/      # Registration page
+│   │   └── docs/          # API documentation
+│   ├── components/         # React components
+│   │   ├── Navbar.tsx     # Navigation with auth state
+│   │   ├── TryItDemo.tsx  # Public demo widget
+│   │   └── ui/            # shadcn/ui components
 │   ├── Dockerfile
 │   └── package.json
 ├── docker-compose.yml       # Multi-service orchestration
@@ -149,15 +159,39 @@ Visit **[http://localhost:3000](http://localhost:3000)**
 **Production (Railway):**
 Visit **[https://distributed-computation.up.railway.app](https://distributed-computation.up.railway.app)**
 
-1. Register/Login with your email
-2. Enter a number (e.g., `10000`)
-3. Choose parallel chunks (e.g., `8`)
-4. Click **Submit**
-5. Watch real-time progress! 🎉
+### Option 1: Try Without Signup (Quickest!)
+
+1. Visit the homepage
+2. Scroll to the **"Try It Now"** widget
+3. Click **Run Demo** button
+4. Watch real-time progress calculating sum(1..1000) = **500,500**! 🎉
+
+### Option 2: Full Features (Requires Account)
+
+1. Click **Get Started Free** to register
+2. Login with your email
+3. Access the **Dashboard** (visible in navbar)
+4. Enter a number (e.g., `10000`)
+5. Choose parallel chunks (e.g., `8`)
+6. Click **Submit Job**
+7. Track progress and view job history
+8. Copy your **API Access Token** for programmatic access
 
 ---
 
 ## 🔧 API Reference
+
+### Authentication
+
+Most endpoints require a JWT bearer token from Supabase authentication.
+
+**Get your token:**
+1. Register/Login at the frontend
+2. Go to **Dashboard** (visible in navbar)
+3. Copy your **API Access Token** from the prominent card
+4. Use in Authorization header: `Bearer YOUR_TOKEN`
+
+**Demo endpoints** (`/jobs/demo`) don't require authentication - perfect for testing!
 
 ### Create a Job
 
@@ -212,6 +246,35 @@ curl https://distributed-background-computation-production.up.railway.app/jobs/3
 }
 ```
 
+### Demo Endpoints (No Authentication Required)
+
+For quick testing without signup:
+
+**Create Demo Job:**
+```bash
+curl -X POST http://localhost:8000/jobs/demo \
+  -H "Content-Type: application/json" \
+  -d '{"n": 1000, "chunks": 4}'
+```
+
+**Response:**
+```json
+{
+  "job_id": "abc-123-def-456",
+  "status": "pending"
+}
+```
+
+**Check Demo Job Status:**
+```bash
+curl http://localhost:8000/jobs/demo/abc-123-def-456
+```
+
+**Demo Limits:**
+- Rate: 5 requests/minute per IP
+- Max n: 10,000
+- Max chunks: 8
+
 ### API Documentation
 
 **Local Development:**
@@ -261,6 +324,50 @@ docker compose run --rm api pytest --cov=app --cov-report=html
 - **Components**: shadcn/ui (Radix UI primitives)
 - **Icons**: Lucide React
 - **State**: React hooks with polling
+- **Auth**: Supabase Authentication
+
+### Page Features
+
+#### Homepage
+- **Hero Section** - Clear value proposition with "Get Started Free" CTA
+- **Try It Demo Widget** - Interactive demo without signup
+  - Pre-configured: n=1000, chunks=4
+  - Real-time progress bar with percentage
+  - Shows chunk completion (e.g., "3/4 chunks")
+  - Displays final result: 500,500
+  - Rate limited: 5 requests/minute
+  - Link to sign up for more features
+- **Stats Cards** - High Availability, Fast Response Times, Production Ready, Enterprise Security
+  - All cards clickable and link to documentation
+- **Features Grid** - Detailed feature descriptions with icons
+- **Tech Stack Showcase** - Visual display of technologies used
+
+#### Dashboard (Authenticated Users)
+- **Job Submission Form** - Submit new computation jobs with custom n and chunks
+- **User Statistics Cards** - Total jobs, completed, failed, average duration
+- **API Access Token Card** - Prominent display with:
+  - Full bearer token in monospace font
+  - One-click copy button with visual feedback ("Copied!")
+  - Example API request code snippet
+  - Instructions on how to use the token
+- **Job History Table** - Paginated list of all jobs with:
+  - Status badges (pending, running, completed, failed)
+  - Progress indicators and percentages
+  - Timestamps (created, started, completed)
+  - Results and error messages
+  - Pagination controls
+
+#### Navigation
+- **Navbar** - Responsive navigation with:
+  - Logo and branding
+  - Links: Home | Dashboard | Docs (Dashboard visible to all, protected route)
+  - Auth state: Sign In/Register buttons OR User dropdown menu
+  - Consistent "Get Started Free" CTA
+  - Mobile-friendly hamburger menu
+  - Scroll effects and animations
+- **Dashboard Link** - Visible to all users
+  - Unauthenticated users → redirected to login page
+  - Authenticated users → access dashboard directly
 
 ---
 
