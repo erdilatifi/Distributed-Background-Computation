@@ -19,6 +19,7 @@ import json
 from . import schemas, tasks
 from .config import get_settings
 from .auth import get_current_user, get_current_active_user, check_job_quota, optional_auth
+from .rate_limiter import get_rate_limiter
 from .supabase_client import (
     get_supabase_service_client,
     get_cached_result,
@@ -47,10 +48,13 @@ api_v1 = APIRouter(prefix="/v1")
 
 settings = get_settings()
 
-# Rate limiting
+# Rate limiting (slowapi for general limits)
 limiter = Limiter(key_func=get_remote_address)
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
+# P0: Per-IP rate limiter (in-memory token bucket)
+ip_rate_limiter = get_rate_limiter(requests_per_minute=10)
 
 # CORS middleware
 app.add_middleware(
@@ -140,17 +144,31 @@ async def create_job(
     
     **Rate Limiting**: 10 requests/minute per IP. Returns 429 with `Retry-After` header on limit exceeded.
     """
-    # Validate input
+    # P0: Per-IP rate limiting (in-memory token bucket)
+    client_ip = get_remote_address(request)
+    allowed, retry_after = ip_rate_limiter.check_rate_limit(client_ip)
+    if not allowed:
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail=f"🚦 Demo rate limit: 10 requests/minute. Please wait {int(retry_after)} seconds.",
+            headers={
+                "Retry-After": str(int(retry_after)),
+                "X-RateLimit-Limit": "10",
+                "X-RateLimit-Remaining": "0"
+            }
+        )
+    
+    # P3: Validate input with tighter limits
     if payload.n <= 0 or payload.n > settings.max_job_n:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"n must be between 1 and {settings.max_job_n}"
+            detail=f"⚠️ Invalid input: n must be between 1 and {settings.max_job_n:,}"
         )
     
     if payload.chunks <= 0 or payload.chunks > settings.max_chunks:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"chunks must be between 1 and {settings.max_chunks}"
+            detail=f"⚠️ Invalid input: chunks must be between 1 and {settings.max_chunks}"
         )
     
     # Check idempotency key from header
@@ -610,20 +628,35 @@ async def create_demo_job(
     """
     Create a demo computation job without authentication.
     
-    Limited to smaller values for public demo:
-    - n: max 10,000
-    - chunks: max 8
+    P3: Limited to smaller values for public demo:
+    - n: max 1,000,000 (1M)
+    - chunks: max 10
     """
-    if payload.n <= 0 or payload.n > 10000:
+    # P0: Per-IP rate limiting
+    client_ip = get_remote_address(request)
+    allowed, retry_after = ip_rate_limiter.check_rate_limit(client_ip)
+    if not allowed:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Demo: n must be between 1 and 10,000"
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail=f"🚦 You hit the demo limit! Maximum 10 requests/minute. Please wait {int(retry_after)} seconds before trying again.",
+            headers={
+                "Retry-After": str(int(retry_after)),
+                "X-RateLimit-Limit": "10",
+                "X-RateLimit-Remaining": "0"
+            }
         )
     
-    if payload.chunks <= 0 or payload.chunks > 8:
+    # P3: Tighter validation for demo
+    if payload.n <= 0 or payload.n > 1_000_000:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Demo: chunks must be between 1 and 8"
+            detail="⚠️ Demo limit: n must be between 1 and 1,000,000"
+        )
+    
+    if payload.chunks <= 0 or payload.chunks > 10:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="⚠️ Demo limit: chunks must be between 1 and 10"
         )
     
     job_id = str(uuid.uuid4())

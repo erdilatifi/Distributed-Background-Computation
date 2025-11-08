@@ -21,6 +21,14 @@ celery_app.conf.update(
     task_track_started=True,
     result_expires=6 * 60 * 60,  # 6 hours
     worker_prefetch_multiplier=1,
+    # P0: Task time limits to prevent stuck jobs
+    task_soft_time_limit=300,  # 5 minutes soft limit (raises SoftTimeLimitExceeded)
+    task_time_limit=360,  # 6 minutes hard limit (kills the worker process)
+    # P0: Retry policy for failed tasks
+    task_acks_late=True,  # Acknowledge task after completion (allows retry on worker crash)
+    task_reject_on_worker_lost=True,  # Reject task if worker is lost
+    task_default_retry_delay=10,  # 10 seconds between retries
+    task_max_retries=2,  # Max 2 retries per task
 )
 
 # Ensure Celery can find task definitions inside the app package.

@@ -24,12 +24,42 @@ websocket_connections_gauge = Gauge('websocket_connections', 'Number of active W
 @router.get("/health")
 async def health_check():
     """
-    Basic health check endpoint.
-    Returns 200 if service is up.
+    P2: Comprehensive health check endpoint.
+    Returns detailed status of API, worker, and Redis.
     """
+    checks = {"api": "up", "worker": "unknown", "redis": "unknown"}
+    all_healthy = True
+    
+    # Check Redis
+    try:
+        from .config import get_sync_redis_client
+        redis = get_sync_redis_client()
+        redis.ping()
+        checks["redis"] = "up"
+    except Exception as e:
+        checks["redis"] = "down"
+        all_healthy = False
+    
+    # Check Celery workers
+    try:
+        from .celery_app import celery_app
+        inspect = celery_app.control.inspect()
+        stats = inspect.stats()
+        if stats and len(stats) > 0:
+            checks["worker"] = "up"
+            checks["worker_count"] = len(stats)
+        else:
+            checks["worker"] = "down"
+            all_healthy = False
+    except Exception as e:
+        checks["worker"] = "down"
+        all_healthy = False
+    
     return {
-        "status": "healthy",
+        "status": "healthy" if all_healthy else "degraded",
         "service": "fastapi-celery-demo",
+        "version": "2.0.0",
+        "checks": checks,
         "timestamp": time.time()
     }
 
@@ -99,6 +129,70 @@ async def metrics():
         content=generate_latest(),
         media_type=CONTENT_TYPE_LATEST
     )
+
+
+@router.get("/metrics-lite")
+async def metrics_lite():
+    """
+    P2: Lightweight metrics endpoint (public, no auth).
+    Returns recent job statistics and performance metrics.
+    """
+    from .config import get_async_redis_client
+    redis = get_async_redis_client()
+    
+    # Get last 10 jobs from Redis (without Supabase dependency)
+    try:
+        # Scan for recent job keys
+        job_keys = []
+        async for key in redis.scan_iter(match="progress:*", count=50):
+            job_keys.append(key)
+            if len(job_keys) >= 10:
+                break
+        
+        jobs_data = []
+        for key in job_keys[:10]:
+            job_data = await redis.hgetall(key)
+            if job_data:
+                jobs_data.append({
+                    "status": job_data.get("status", "unknown"),
+                    "progress": float(job_data.get("progress", 0) or 0),
+                    "total_chunks": int(job_data.get("total_chunks", 0) or 0),
+                    "completed_chunks": int(job_data.get("completed_chunks", 0) or 0)
+                })
+        
+        # Calculate metrics
+        total_jobs = len(jobs_data)
+        completed = sum(1 for j in jobs_data if j["status"] == "completed")
+        failed = sum(1 for j in jobs_data if j["status"] == "failed")
+        running = sum(1 for j in jobs_data if j["status"] == "running")
+        
+        return {
+            "timestamp": time.time(),
+            "last_10_jobs": {
+                "total": total_jobs,
+                "completed": completed,
+                "failed": failed,
+                "running": running,
+                "success_rate": round(completed / total_jobs * 100, 1) if total_jobs > 0 else 0
+            },
+            "prometheus_metrics": {
+                "jobs_created_total": job_created_counter._value.get(),
+                "jobs_completed_total": job_completed_counter._value.get(),
+                "jobs_failed_total": job_failed_counter._value.get(),
+                "active_jobs": active_jobs_gauge._value.get()
+            }
+        }
+    except Exception as e:
+        return {
+            "error": str(e),
+            "timestamp": time.time(),
+            "prometheus_metrics": {
+                "jobs_created_total": job_created_counter._value.get(),
+                "jobs_completed_total": job_completed_counter._value.get(),
+                "jobs_failed_total": job_failed_counter._value.get(),
+                "active_jobs": active_jobs_gauge._value.get()
+            }
+        }
 
 
 @router.get("/stats")
@@ -238,3 +332,17 @@ def record_job_failed():
 def update_websocket_connections(count: int):
     """Update WebSocket connection count"""
     websocket_connections_gauge.set(count)
+
+
+@router.post("/cleanup")
+async def trigger_cleanup(
+    retention_hours: int = 24,
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    P2: Manually trigger job data cleanup.
+    Removes job data older than retention period from Redis.
+    """
+    from .cleanup import cleanup_old_jobs_async
+    result = await cleanup_old_jobs_async(retention_hours)
+    return result

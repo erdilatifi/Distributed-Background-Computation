@@ -43,7 +43,7 @@ export default function DashboardPage() {
   const [user, setUser] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   
-  const [n, setN] = useState<string>('1000')
+  const [n, setN] = useState<string>('250000')
   const [chunks, setChunks] = useState<string>('4')
   const [nError, setNError] = useState<string | null>(null)
   const [chunksError, setChunksError] = useState<string | null>(null)
@@ -58,6 +58,16 @@ export default function DashboardPage() {
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false)
   const [copiedJobId, setCopiedJobId] = useState<boolean>(false)
   
+  // P0: Cold-start detection and warming state
+  const [isWarmingUp, setIsWarmingUp] = useState<boolean>(false)
+  const [showWarmingBanner, setShowWarmingBanner] = useState<boolean>(false)
+  const [healthStatus, setHealthStatus] = useState<any>(null)
+  const [retryAttempt, setRetryAttempt] = useState<number>(0)
+  
+  // P1: UI improvements
+  const [showAdvanced, setShowAdvanced] = useState<boolean>(false)
+  const [selectedPreset, setSelectedPreset] = useState<string>('medium')
+  
   // Job history and stats
   const [jobHistory, setJobHistory] = useState<any[]>([])
   const [userStats, setUserStats] = useState<any>(null)
@@ -71,6 +81,7 @@ export default function DashboardPage() {
   const [tokenCopied, setTokenCopied] = useState(false)
 
   const pollRef = useRef<NodeJS.Timeout | null>(null)
+  const retryTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   // Fetch job history and stats
   const fetchJobHistory = useCallback(async () => {
@@ -137,6 +148,28 @@ export default function DashboardPage() {
     }
   }, [user, supabase])
 
+  // P0: Check API/worker health on mount
+  useEffect(() => {
+    const checkHealth = async () => {
+      try {
+        const response = await fetch(`${API_BASE_URL}/monitoring/health`)
+        const health = await response.json()
+        setHealthStatus(health)
+        
+        // Show warming banner if worker is down
+        if (health.checks?.worker === 'down' || health.checks?.redis === 'down') {
+          setShowWarmingBanner(true)
+          setIsWarmingUp(true)
+        }
+      } catch (err) {
+        console.error('Health check failed:', err)
+        setShowWarmingBanner(true)
+        setIsWarmingUp(true)
+      }
+    }
+    checkHealth()
+  }, [])
+  
   useEffect(() => {
     const checkUser = async () => {
       const { data: { user }, error } = await supabase.auth.getUser()
@@ -209,8 +242,8 @@ export default function DashboardPage() {
     setResult(null)
     setDetail('Submit a job to begin.')
     setError(null)
-    setN(1_000)
-    setChunks(4)
+    setN('250000')  // Reset to medium preset
+    setChunks('4')
   }
 
   const refreshData = async () => {
@@ -266,7 +299,13 @@ export default function DashboardPage() {
         setCompletedChunks(payload.completed_chunks)
         setTotalChunks(payload.total_chunks)
         setResult(payload.result ?? null)
-        setDetail(payload.detail ?? 'Job finished.')
+        
+        // P1: Enhanced completion messages
+        if (payload.status === 'completed') {
+          setDetail('✅ Computation complete!')
+        } else {
+          setDetail(`❌ Failed: ${payload.detail || 'Unknown error'}`)
+        }
         
         // Refresh history and stats when job completes
         fetchJobHistory()
@@ -281,7 +320,21 @@ export default function DashboardPage() {
         setProgress(payload.progress)
         setCompletedChunks(payload.completed_chunks)
         setTotalChunks(payload.total_chunks)
-        setDetail(payload.detail ?? 'Processing...')
+        
+        // P1: Enhanced progress messages based on status and progress
+        let enhancedDetail = payload.detail ?? 'Processing...'
+        if (payload.status === 'pending') {
+          enhancedDetail = '📋 Queued for processing...'
+        } else if (payload.status === 'running') {
+          if (payload.progress < 0.1) {
+            enhancedDetail = '🚀 Starting workers...'
+          } else if (payload.progress >= 1.0) {
+            enhancedDetail = '🔄 Merging results...'
+          } else {
+            enhancedDetail = `⚙️ Running (${payload.completed_chunks}/${payload.total_chunks} chunks processed)`
+          }
+        }
+        setDetail(enhancedDetail)
       }
     } catch (err: any) {
       console.error('Error fetching job status:', err)
@@ -365,7 +418,8 @@ export default function DashboardPage() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`
+          'Authorization': `Bearer ${session.access_token}`,
+          'Idempotency-Key': `${user.id}-${Date.now()}`  // P0: Prevent duplicate submissions
         },
         body: JSON.stringify(payload)
       })
@@ -374,12 +428,14 @@ export default function DashboardPage() {
         const retryAfter = response.headers.get('Retry-After')
         const limit = response.headers.get('X-RateLimit-Limit')
         const remaining = response.headers.get('X-RateLimit-Remaining')
-        toast.error('Rate limit exceeded', {
+        toast.error('🚦 Rate limit exceeded', {
           description: retryAfter 
-            ? `You can make ${limit} requests per minute. Please wait ${retryAfter} seconds.`
+            ? `Demo limit: ${limit} requests/min. Please wait ${retryAfter} seconds.`
             : `Too many requests. You have ${remaining || 0} requests remaining.`
         })
-        throw new Error('Rate limit exceeded')
+        setError(`🚦 Rate limit: Please wait ${retryAfter || 60} seconds before trying again.`)
+        setIsSubmitting(false)
+        return
       }
 
       if (!response.ok) {
@@ -391,12 +447,44 @@ export default function DashboardPage() {
       setJobId(data.job_id)
       setStatus(data.status)
       setIsSubmitting(false)
+      setIsWarmingUp(false)  // Clear warming state on success
+      setShowWarmingBanner(false)
+      setRetryAttempt(0)  // Reset retry counter
       
       // Refresh history and stats immediately after job submission
       fetchJobHistory()
       fetchUserStats()
     } catch (err: any) {
-      setError(err.message)
+      console.error('Job submission error:', err)
+      
+      // P0: Auto-retry on network error (first attempt only)
+      const isNetworkError = err.message.includes('fetch') || err.message.includes('Failed to fetch') || err.message.includes('network')
+      
+      if (retryAttempt === 0 && isNetworkError) {
+        setError('🌐 Network error detected. Retrying in 10 seconds...')
+        setRetryAttempt(1)
+        toast.info('Retrying request...', {
+          description: 'The server might be waking up. Retrying automatically.'
+        })
+        
+        retryTimeoutRef.current = setTimeout(() => {
+          const form = event.target as HTMLFormElement
+          form.requestSubmit()
+        }, 10000)  // 10 second delay
+      } else {
+        // Show user-friendly error messages
+        if (err.message.includes('Rate limit')) {
+          setError('🚦 Rate limit exceeded. Please wait a moment before trying again.')
+        } else if (err.message.includes('validation') || err.message.includes('Invalid')) {
+          setError('⚠️ ' + err.message)
+        } else if (isNetworkError) {
+          setError('🌐 Network error. Please check your connection and try again.')
+        } else {
+          setError(err.message)
+        }
+        setRetryAttempt(0)
+      }
+      
       setIsSubmitting(false)
     }
   }
@@ -448,6 +536,46 @@ export default function DashboardPage() {
               </p>
             </div>
 
+          {/* P0: Warming Banner */}
+          {showWarmingBanner && (
+            <Card className="border-amber-500/30 bg-amber-500/10 backdrop-blur-sm">
+              <CardContent className="pt-6">
+                <div className="flex items-start gap-3">
+                  <AlertTriangle className="h-5 w-5 text-amber-400 mt-0.5 flex-shrink-0" />
+                  <div className="flex-1">
+                    <p className="text-sm font-semibold text-amber-300">
+                      ⚡ Service is warming up
+                    </p>
+                    <p className="text-xs text-amber-200/80 mt-1">
+                      The API and workers are starting. This may take 10-30 seconds. Your request will be queued automatically.
+                    </p>
+                    {healthStatus && (
+                      <div className="flex gap-2 mt-2 text-xs">
+                        <span className={healthStatus.checks?.api === 'up' ? 'text-green-400' : 'text-red-400'}>
+                          API: {healthStatus.checks?.api || 'unknown'}
+                        </span>
+                        <span className={healthStatus.checks?.worker === 'up' ? 'text-green-400' : 'text-red-400'}>
+                          Worker: {healthStatus.checks?.worker || 'unknown'}
+                        </span>
+                        <span className={healthStatus.checks?.redis === 'up' ? 'text-green-400' : 'text-red-400'}>
+                          Redis: {healthStatus.checks?.redis || 'unknown'}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                  {!isWarmingUp && (
+                    <button 
+                      onClick={() => setShowWarmingBanner(false)}
+                      className="ml-auto text-amber-400 hover:text-amber-300 transition-colors"
+                    >
+                      ✕
+                    </button>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           {/* Job Configuration Card */}
           <Card className="border-slate-800 bg-slate-900/50 backdrop-blur-sm">
             <CardHeader className="space-y-1 pb-4 md:pb-6">
@@ -459,16 +587,55 @@ export default function DashboardPage() {
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="space-y-4">
+                  {/* P1: Preset Selector */}
                   <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-4">
-                    <p className="text-sm text-blue-300">
-                      <strong className="font-semibold">What this calculates:</strong> Sum of all integers from 1 to n
+                    <p className="text-sm text-blue-300 font-semibold mb-3">
+                      🎯 Quick Presets
                     </p>
-                    <p className="text-xs text-blue-200/70 mt-1">
-                      Example: n=250 → 1+2+3+...+250 = <strong className="font-semibold">31,375</strong>
+                    <div className="grid grid-cols-3 gap-2">
+                      {[
+                        { id: 'small', label: 'Small', n: 10000, chunks: 4, desc: '~instant' },
+                        { id: 'medium', label: 'Medium', n: 250000, chunks: 4, desc: '~2-5s' },
+                        { id: 'large', label: 'Large', n: 1000000, chunks: 8, desc: '~5-10s' }
+                      ].map((preset) => (
+                        <button
+                          key={preset.id}
+                          type="button"
+                          onClick={() => {
+                            setSelectedPreset(preset.id)
+                            setN(preset.n.toString())
+                            setChunks(preset.chunks.toString())
+                            setNError(null)
+                            setChunksError(null)
+                          }}
+                          className={`px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
+                            selectedPreset === preset.id
+                              ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/30'
+                              : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+                          }`}
+                        >
+                          <div className="font-semibold">{preset.label}</div>
+                          <div className="text-xs opacity-70 mt-0.5">{preset.desc}</div>
+                        </button>
+                      ))}
+                    </div>
+                    <p className="text-xs text-blue-200/70 mt-3">
+                      <strong className="font-semibold">What this calculates:</strong> Sum of integers from 1 to n
                     </p>
                   </div>
 
-                  <div className="grid gap-6 sm:grid-cols-2">
+                  {/* P1: Advanced Options Toggle */}
+                  <button
+                    type="button"
+                    onClick={() => setShowAdvanced(!showAdvanced)}
+                    className="text-sm text-slate-400 hover:text-slate-300 flex items-center gap-2 transition-colors"
+                  >
+                    <span>{showAdvanced ? '▼' : '▶'} Advanced Options</span>
+                  </button>
+
+                  {/* Advanced inputs - collapsible */}
+                  {showAdvanced && (
+                    <div className="grid gap-6 sm:grid-cols-2 animate-in fade-in slide-in-from-top-2 duration-200">
                     <div className="space-y-3 group">
                       <Label htmlFor="n" className="text-sm font-semibold text-slate-300">Upper bound (n)</Label>
                       <Input
@@ -545,12 +712,13 @@ export default function DashboardPage() {
                       )}
                     </div>
                   </div>
+                  )}
                 </div>
 
                 <div className="flex flex-col sm:flex-row gap-3">
                   <Button 
                     type="submit" 
-                    disabled={isSubmitting || !!nError || !!chunksError || n === '' || chunks === ''} 
+                    disabled={isSubmitting || isWarmingUp || !!nError || !!chunksError || n === '' || chunks === ''} 
                     className="w-full sm:flex-1 h-12 md:h-14 bg-blue-600 hover:bg-blue-500 text-white font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     size="lg"
                   >
@@ -562,7 +730,7 @@ export default function DashboardPage() {
                     ) : (
                       <>
                         <Play className="mr-2 h-4 w-4 md:h-5 md:w-5" />
-                        <span className="text-sm md:text-base">Start Job</span>
+                        <span className="text-sm md:text-base">Run Demo</span>
                       </>
                     )}
                   </Button>

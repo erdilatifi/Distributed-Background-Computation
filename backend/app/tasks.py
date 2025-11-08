@@ -12,6 +12,7 @@ from datetime import datetime
 
 from celery import chord
 from celery.utils.log import get_task_logger
+from celery.exceptions import SoftTimeLimitExceeded, Retry
 
 from .celery_app import celery_app
 from .config import get_sync_redis_client
@@ -121,8 +122,9 @@ def orchestrate_range_sum(self, job_id: str, n: int, chunks: int) -> None:
     start_job(job_id, n, chunks)
 
 
-@celery_app.task(bind=True, name="app.tasks.compute_chunk")
+@celery_app.task(bind=True, name="app.tasks.compute_chunk", max_retries=2, autoretry_for=(Exception,), retry_backoff=True, retry_backoff_max=600, retry_jitter=True)
 def compute_chunk(self, job_id: str, chunk_index: int, start: int, end: int) -> int:
+    """Compute sum for a chunk with retry logic and time limit handling."""
     redis = get_sync_redis_client()
     
     try:
@@ -175,10 +177,29 @@ def compute_chunk(self, job_id: str, chunk_index: int, start: int, end: int) -> 
             subtotal,
         )
         return subtotal
-    except Exception as exc:  # pragma: no cover - defensive logging
-        logger.exception("Chunk %s for job %s failed: %s", chunk_index, job_id, exc)
-        _mark_failed(job_id, f"Chunk {chunk_index + 1} failed: {exc}")
+    except SoftTimeLimitExceeded:
+        # P0: Handle soft time limit - mark chunk and job as failed
+        error_msg = f"Chunk {chunk_index + 1} exceeded time limit (5 minutes)"
+        logger.error(error_msg)
+        _mark_failed(job_id, error_msg)
+        # Don't retry on time limit
         raise
+    except Exception as exc:
+        # P0: Chunk failure = whole job failure
+        retry_num = self.request.retries
+        if retry_num < self.max_retries:
+            logger.warning(
+                "Chunk %s for job %s failed (attempt %s/%s): %s - retrying...",
+                chunk_index, job_id, retry_num + 1, self.max_retries, exc
+            )
+            # Exponential backoff retry
+            raise self.retry(exc=exc, countdown=2 ** retry_num * 10)
+        else:
+            # Max retries exceeded - fail the whole job
+            error_msg = f"Chunk {chunk_index + 1} failed after {self.max_retries} retries: {str(exc)}"
+            logger.exception("Chunk %s for job %s failed permanently: %s", chunk_index, job_id, exc)
+            _mark_failed(job_id, error_msg)
+            raise
 
 
 @celery_app.task(bind=True, name="app.tasks.finalize_job")
