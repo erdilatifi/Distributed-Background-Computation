@@ -52,18 +52,6 @@ limiter = Limiter(key_func=get_remote_address)
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
-# Rate limit headers middleware
-class RateLimitHeadersMiddleware(BaseHTTPMiddleware):
-    async def dispatch(self, request: Request, call_next):
-        response = await call_next(request)
-        # Add rate limit headers if available from slowapi
-        if hasattr(request.state, "view_rate_limit"):
-            limit_info = request.state.view_rate_limit
-            response.headers["X-RateLimit-Limit"] = str(limit_info.limit)
-            response.headers["X-RateLimit-Remaining"] = str(limit_info.remaining)
-            response.headers["X-RateLimit-Reset"] = str(limit_info.reset)
-        return response
-
 # CORS middleware
 app.add_middleware(
     CORSMiddleware,
@@ -72,9 +60,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-# Add rate limit headers middleware
-app.add_middleware(RateLimitHeadersMiddleware)
 
 # Include monitoring routes (keep at root for backward compatibility)
 app.include_router(monitoring_router)
