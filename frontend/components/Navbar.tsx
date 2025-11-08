@@ -13,15 +13,17 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { LogOut, LayoutDashboard, Layers, BookOpen, User, Menu, X, Sparkles, ChevronDown } from 'lucide-react'
+import { LogOut, LayoutDashboard, Layers, BookOpen, User, Menu, X, Sparkles, ChevronDown, Activity } from 'lucide-react'
 
 export default function Navbar() {
   const [user, setUser] = useState<any>(null)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
+  const [apiHealthy, setApiHealthy] = useState<boolean | null>(null)
   const router = useRouter()
   const pathname = usePathname()
   const supabase = createClient()
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
 
   useEffect(() => {
     const handleScroll = () => {
@@ -30,6 +32,25 @@ export default function Navbar() {
     window.addEventListener('scroll', handleScroll)
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
+
+  // Check API health
+  useEffect(() => {
+    const checkHealth = async () => {
+      try {
+        const response = await fetch(`${apiUrl}/monitoring/health`, {
+          method: 'GET',
+          cache: 'no-store'
+        })
+        setApiHealthy(response.ok)
+      } catch (error) {
+        setApiHealthy(false)
+      }
+    }
+    
+    checkHealth()
+    const interval = setInterval(checkHealth, 30000) // Check every 30s
+    return () => clearInterval(interval)
+  }, [apiUrl])
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
@@ -88,24 +109,49 @@ export default function Navbar() {
               {navLinks.map((link) => {
                 const Icon = link.icon
                 const isActive = pathname === link.href
+                const isDashboard = link.href === '/dashboard'
                 return (
-                  <Link
-                    key={link.href}
-                    href={link.href}
-                    className={`relative flex items-center gap-2 px-4 py-2 transition-colors group ${
-                      isActive
-                        ? 'text-white'
-                        : 'text-slate-400 hover:text-white'
-                    }`}
-                  >
-                    <Icon className="h-4 w-4" />
-                    <span className="text-sm font-medium">{link.label}</span>
-                    <span className={`absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 transition-transform ${
-                      isActive ? 'scale-x-100' : 'scale-x-0 group-hover:scale-x-100'
-                    }`} />
-                  </Link>
+                  <div key={link.href} className="relative group/nav">
+                    <Link
+                      href={link.href}
+                      className={`relative flex items-center gap-2 px-4 py-2 transition-colors group ${
+                        isActive
+                          ? 'text-white'
+                          : 'text-slate-400 hover:text-white'
+                      }`}
+                    >
+                      <Icon className="h-4 w-4" />
+                      <span className="text-sm font-medium">{link.label}</span>
+                      <span className={`absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 transition-transform ${
+                        isActive ? 'scale-x-100' : 'scale-x-0 group-hover:scale-x-100'
+                      }`} />
+                    </Link>
+                    {isDashboard && !user && (
+                      <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-xs text-slate-300 whitespace-nowrap opacity-0 group-hover/nav:opacity-100 transition-opacity pointer-events-none z-50 shadow-xl">
+                        Sign in to use Dashboard
+                        <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-slate-900 border-l border-t border-slate-700 rotate-45" />
+                      </div>
+                    )}
+                  </div>
                 )
               })}
+              
+              {/* API Health Indicator */}
+              <div className="ml-2 flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-800/50 border border-slate-700/50">
+                <div className="relative group/health">
+                  <div className="flex items-center gap-1.5">
+                    <div className={`w-2 h-2 rounded-full ${
+                      apiHealthy === null ? 'bg-slate-500 animate-pulse' :
+                      apiHealthy ? 'bg-emerald-500 animate-pulse' : 'bg-red-500'
+                    }`} />
+                    <Activity className="h-3.5 w-3.5 text-slate-400" />
+                  </div>
+                  <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-xs text-slate-300 whitespace-nowrap opacity-0 group-hover/health:opacity-100 transition-opacity pointer-events-none z-50 shadow-xl">
+                    API Status: {apiHealthy === null ? 'Checking...' : apiHealthy ? 'Healthy' : 'Offline'}
+                    <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-slate-900 border-l border-t border-slate-700 rotate-45" />
+                  </div>
+                </div>
+              </div>
             </div>
 
             {/* Desktop Auth Section */}
@@ -198,6 +244,7 @@ export default function Navbar() {
               {navLinks.map((link, index) => {
                 const Icon = link.icon
                 const isActive = pathname === link.href
+                const isDashboard = link.href === '/dashboard'
                 return (
                   <Link
                     key={link.href}
@@ -210,15 +257,32 @@ export default function Navbar() {
                     }`}
                   >
                     <Icon className="h-5 w-5" />
-                    <span className="font-medium">
-                      {link.label}
-                    </span>
+                    <div className="flex-1">
+                      <span className="font-medium">
+                        {link.label}
+                      </span>
+                      {isDashboard && !user && (
+                        <p className="text-xs text-slate-500 mt-0.5">Sign in required</p>
+                      )}
+                    </div>
                     {isActive && (
                       <span className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-blue-500 via-purple-500 to-pink-500" />
                     )}
                   </Link>
                 )
               })}
+              
+              {/* Mobile API Health Indicator */}
+              <div className="flex items-center gap-2 p-3 border-b border-slate-800">
+                <div className={`w-2.5 h-2.5 rounded-full ${
+                  apiHealthy === null ? 'bg-slate-500 animate-pulse' :
+                  apiHealthy ? 'bg-emerald-500 animate-pulse' : 'bg-red-500'
+                }`} />
+                <Activity className="h-4 w-4 text-slate-400" />
+                <span className="text-sm text-slate-400">
+                  API: {apiHealthy === null ? 'Checking...' : apiHealthy ? 'Healthy' : 'Offline'}
+                </span>
+              </div>
 
               <div className="h-px bg-gradient-to-r from-transparent via-white/10 to-transparent my-4" />
 

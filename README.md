@@ -123,6 +123,50 @@ User submits job → FastAPI splits into chunks → Celery workers process in pa
 
 ## 🚀 Quick Start
 
+### ⚡ Try Demo Without Setup (30 seconds)
+
+No installation needed! Test the public API instantly:
+
+```bash
+# Create a demo job (no auth required)
+curl -X POST https://distributed-background-computation-production.up.railway.app/jobs/demo \
+  -H "Content-Type: application/json" \
+  -d '{"n": 1000, "chunks": 4}'
+
+# Response: {"job_id": "abc-123...", "status": "pending"}
+
+# Check status (replace JOB_ID with the one from above)
+curl https://distributed-background-computation-production.up.railway.app/jobs/demo/JOB_ID
+
+# Response: {"job_id": "abc-123...", "status": "completed", "result": 500500, "progress": 1.0}
+```
+
+**Demo Limits:** Max n=10,000, Max chunks=8, Rate: 5 requests/minute per IP
+
+### 🔒 Rate Limiting & Idempotency
+
+**Rate Limits:**
+- **Authenticated endpoints** (`/jobs`): 10 requests/minute per IP
+- **Demo endpoints** (`/jobs/demo`): 5 requests/minute per IP
+- **429 Response**: When rate limit exceeded, response includes `Retry-After` header (seconds until reset)
+
+**Idempotency Keys:**
+Prevent duplicate job creation on network retries by including an `Idempotency-Key` header:
+
+```bash
+curl -X POST https://distributed-background-computation-production.up.railway.app/jobs \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Idempotency-Key: unique-request-id-12345" \
+  -d '{"n": 10000, "chunks": 8}'
+```
+
+- Same key within 24 hours returns the original response (no duplicate job)
+- Use UUID or timestamp-based keys for uniqueness
+- Cached responses expire after 24 hours
+
+---
+
 ### Prerequisites
 
 - **Docker Desktop** (includes Docker Engine + Compose)
@@ -132,8 +176,8 @@ User submits job → FastAPI splits into chunks → Celery workers process in pa
 
 ```bash
 # Clone the repository
-git clone <your-repo-url>
-cd python-project
+git clone https://github.com/erdilatifi/Distributed-Background-Computation.git
+cd Distributed-Background-Computation
 
 # Copy environment configuration
 cp .env.example .env
@@ -371,7 +415,32 @@ docker compose run --rm api pytest --cov=app --cov-report=html
 
 ---
 
-## 🐛 Troubleshooting
+## ❓ Quick Troubleshooting FAQ
+
+### API Returns 500 Error
+- **Railway cold start**: First request may take 30s to wake the server
+- **Solution**: Wait 30 seconds and retry, or check `/monitoring/health` endpoint
+
+### CORS Errors in Browser
+- **Cause**: Frontend URL not in `BACKEND_CORS_ORIGINS`
+- **Solution**: Add your frontend URL to `.env`: `BACKEND_CORS_ORIGINS=http://localhost:3000,https://yourdomain.com`
+
+### Jobs Stuck in "Pending"
+- **Cause**: Celery workers not running or Redis connection issue
+- **Solution**: Check worker logs: `docker compose logs -f worker`
+- Verify Redis: `docker compose exec redis redis-cli ping` (should return PONG)
+
+### "Job not found" Error
+- **Cause**: Job expired from Redis (default TTL) or wrong job_id
+- **Solution**: Jobs are stored for 24 hours; check the job_id is correct
+
+### API Docs (/docs) Not Loading
+- **Cause**: API service not running or Railway sleeping
+- **Solution**: Check `/monitoring/health` first, wait for cold start (~30s)
+
+---
+
+## 🐛 Detailed Troubleshooting
 
 ### Services Won't Start
 

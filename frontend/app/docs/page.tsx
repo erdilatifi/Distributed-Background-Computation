@@ -1,10 +1,73 @@
 'use client'
 
+import { useState, useEffect } from 'react'
 import Navbar from '@/components/Navbar'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { BookOpen, Code, Zap, Server, Database, CheckCircle2, GitBranch, Shield, Rocket, Users, BarChart, Lock, RefreshCw, Layers, Terminal, FileCode } from 'lucide-react'
+import { BookOpen, Code, Zap, Server, Database, CheckCircle2, GitBranch, Shield, Rocket, Users, BarChart, Lock, RefreshCw, Layers, Terminal, FileCode, Copy, Check, ExternalLink, Github } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 
 export default function DocsPage() {
+  const [copiedCode, setCopiedCode] = useState<string | null>(null)
+  const [apiHealthy, setApiHealthy] = useState<boolean | null>(null)
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
+  const isProd = apiUrl.includes('railway.app')
+
+  useEffect(() => {
+    const checkHealth = async () => {
+      try {
+        const response = await fetch(`${apiUrl}/monitoring/health`, { cache: 'no-store' })
+        setApiHealthy(response.ok)
+      } catch {
+        setApiHealthy(false)
+      }
+    }
+    checkHealth()
+  }, [apiUrl])
+
+  const copyToClipboard = (text: string, id: string) => {
+    navigator.clipboard.writeText(text)
+    setCopiedCode(id)
+    setTimeout(() => setCopiedCode(null), 2000)
+  }
+
+  const CodeBlock = ({ code, id }: { code: string; id: string }) => (
+    <div className="relative group">
+      <pre className="bg-slate-950 p-4 rounded-lg text-sm text-slate-300 overflow-x-auto border border-slate-700">
+        {code}
+      </pre>
+      <Button
+        size="sm"
+        variant="ghost"
+        onClick={() => copyToClipboard(code, id)}
+        className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity bg-slate-800 hover:bg-slate-700 text-slate-300"
+      >
+        {copiedCode === id ? (
+          <>
+            <Check className="h-3 w-3 mr-1" />
+            Copied
+          </>
+        ) : (
+          <>
+            <Copy className="h-3 w-3 mr-1" />
+            Copy
+          </>
+        )}
+      </Button>
+    </div>
+  )
+
+  const GitHubLink = ({ path, line }: { path: string; line?: string }) => (
+    <a
+      href={`https://github.com/erdilatifi/Distributed-Background-Computation/blob/main/${path}${line ? `#L${line}` : ''}`}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="inline-flex items-center gap-1 text-xs text-blue-400 hover:text-blue-300 transition-colors"
+    >
+      <Github className="h-3 w-3" />
+      View source
+      <ExternalLink className="h-3 w-3" />
+    </a>
+  )
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 relative overflow-hidden">
       {/* Premium background effects */}
@@ -136,7 +199,12 @@ export default function DocsPage() {
                         <p className="font-semibold text-blue-400">Production:</p>
                         <p>• Frontend: <code className="bg-slate-950 px-2 py-1 rounded">https://distributed-computation.up.railway.app</code></p>
                         <p>• Backend API: <code className="bg-slate-950 px-2 py-1 rounded">https://distributed-background-computation-production.up.railway.app</code></p>
-                        <p>• API Docs: <code className="bg-slate-950 px-2 py-1 rounded">https://distributed-background-computation-production.up.railway.app/docs</code></p>
+                        <div className="flex items-center gap-2">
+                          <p>• API Docs: <code className="bg-slate-950 px-2 py-1 rounded">https://distributed-background-computation-production.up.railway.app/docs</code></p>
+                          {apiHealthy === false && (
+                            <span className="text-xs text-amber-400">(API offline - see in-app docs)</span>
+                          )}
+                        </div>
                       </div>
                       <div className="space-y-2">
                         <p className="font-semibold text-emerald-400">Local:</p>
@@ -215,6 +283,91 @@ Authorization: Bearer YOUR_API_TOKEN`}
               <div className="p-4 rounded-lg bg-blue-500/10 border border-blue-500/20">
                 <p className="text-sm text-blue-300">
                   <strong>Tip:</strong> The dashboard provides a user-friendly interface to submit jobs and monitor their progress in real-time via automatic polling (1s).
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Code Verifiability Section */}
+          <Card className="border-slate-800/50 bg-gradient-to-br from-slate-900/90 to-slate-800/90 backdrop-blur-xl shadow-2xl">
+            <CardHeader>
+              <CardTitle className="text-2xl font-bold bg-gradient-to-r from-white to-slate-300 bg-clip-text text-transparent flex items-center gap-2">
+                <FileCode className="h-6 w-6 text-emerald-400" />
+                Code Verifiability
+              </CardTitle>
+              <CardDescription>
+                Direct links to implementation - verify every claimed feature
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid md:grid-cols-2 gap-4">
+                <div className="p-4 rounded-lg bg-slate-950/50 border border-slate-700/50">
+                  <h4 className="font-bold text-white mb-3 flex items-center gap-2">
+                    <Shield className="h-5 w-5 text-blue-400" />
+                    Rate Limiting
+                  </h4>
+                  <p className="text-sm text-slate-400 mb-2">SlowAPI middleware with per-IP and per-user limits</p>
+                  <GitHubLink path="backend/app/main.py" line="44-46" />
+                </div>
+                
+                <div className="p-4 rounded-lg bg-slate-950/50 border border-slate-700/50">
+                  <h4 className="font-bold text-white mb-3 flex items-center gap-2">
+                    <Database className="h-5 w-5 text-purple-400" />
+                    Result Caching
+                  </h4>
+                  <p className="text-sm text-slate-400 mb-2">Intelligent caching in Supabase for repeated computations</p>
+                  <GitHubLink path="backend/app/supabase_client.py" line="80-100" />
+                </div>
+                
+                <div className="p-4 rounded-lg bg-slate-950/50 border border-slate-700/50">
+                  <h4 className="font-bold text-white mb-3 flex items-center gap-2">
+                    <RefreshCw className="h-5 w-5 text-emerald-400" />
+                    Auto Retry Logic
+                  </h4>
+                  <p className="text-sm text-slate-400 mb-2">Celery task retry with exponential backoff</p>
+                  <GitHubLink path="backend/app/tasks.py" line="124-182" />
+                </div>
+                
+                <div className="p-4 rounded-lg bg-slate-950/50 border border-slate-700/50">
+                  <h4 className="font-bold text-white mb-3 flex items-center gap-2">
+                    <Layers className="h-5 w-5 text-amber-400" />
+                    Chunking Logic
+                  </h4>
+                  <p className="text-sm text-slate-400 mb-2">Parallel task distribution across workers</p>
+                  <GitHubLink path="backend/app/tasks.py" line="67-112" />
+                </div>
+                
+                <div className="p-4 rounded-lg bg-slate-950/50 border border-slate-700/50">
+                  <h4 className="font-bold text-white mb-3 flex items-center gap-2">
+                    <Lock className="h-5 w-5 text-red-400" />
+                    Row Level Security
+                  </h4>
+                  <p className="text-sm text-slate-400 mb-2">PostgreSQL RLS policies on jobs table</p>
+                  <a
+                    href="https://github.com/erdilatifi/Distributed-Background-Computation#security"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 text-xs text-blue-400 hover:text-blue-300 transition-colors"
+                  >
+                    <Github className="h-3 w-3" />
+                    View SQL policies
+                    <ExternalLink className="h-3 w-3" />
+                  </a>
+                </div>
+                
+                <div className="p-4 rounded-lg bg-slate-950/50 border border-slate-700/50">
+                  <h4 className="font-bold text-white mb-3 flex items-center gap-2">
+                    <BarChart className="h-5 w-5 text-pink-400" />
+                    Monitoring & Metrics
+                  </h4>
+                  <p className="text-sm text-slate-400 mb-2">Prometheus metrics and health checks</p>
+                  <GitHubLink path="backend/app/monitoring.py" line="24-101" />
+                </div>
+              </div>
+              
+              <div className="mt-4 p-4 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
+                <p className="text-sm text-emerald-300">
+                  <strong>Transparency:</strong> All claimed features are verifiable in the public GitHub repository. Click any link above to inspect the actual implementation.
                 </p>
               </div>
             </CardContent>

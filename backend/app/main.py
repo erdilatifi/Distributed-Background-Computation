@@ -105,6 +105,11 @@ async def create_job(
     
     Optional authentication. If Supabase is configured, checks user quota and rate limits.
     Returns cached result if available.
+    
+    **Idempotency**: Include `Idempotency-Key` header to prevent duplicate job creation on retries.
+    If the same key is used within 24 hours, the original job response is returned.
+    
+    **Rate Limiting**: 10 requests/minute per IP. Returns 429 with `Retry-After` header on limit exceeded.
     """
     # Validate input
     if payload.n <= 0 or payload.n > settings.max_job_n:
@@ -118,6 +123,18 @@ async def create_job(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"chunks must be between 1 and {settings.max_chunks}"
         )
+    
+    # Check idempotency key from header
+    from .config import get_async_redis_client
+    redis = get_async_redis_client()
+    
+    idempotency_key = request.headers.get("Idempotency-Key")
+    if idempotency_key:
+        idempotency_cache_key = f"idempotency:{idempotency_key}"
+        cached_response = await redis.get(idempotency_cache_key)
+        if cached_response:
+            import json
+            return schemas.JobCreated(**json.loads(cached_response))
     
     # Create new job
     job_id = str(uuid.uuid4())
@@ -204,7 +221,18 @@ async def create_job(
     # Start Celery task
     tasks.orchestrate_range_sum.delay(job_id, payload.n, payload.chunks)
     
-    return schemas.JobCreated(job_id=job_id, status="pending")
+    response = schemas.JobCreated(job_id=job_id, status="pending")
+    
+    # Cache idempotency response for 24 hours
+    if idempotency_key:
+        import json
+        await redis.setex(
+            f"idempotency:{idempotency_key}",
+            86400,  # 24 hours
+            json.dumps(response.dict())
+        )
+    
+    return response
 
 
 @app.get(
