@@ -326,10 +326,19 @@ curl -X POST https://distributed-background-computation-production.up.railway.ap
 **429 Too Many Requests** - Rate limit exceeded:
 ```json
 {
-  "detail": "Rate limit exceeded: 10 per 1 minute"
+  "detail": "🚦 Demo rate limit: 10 requests/minute. Please wait 45 seconds."
 }
 ```
-*Headers:* `Retry-After: 45` (seconds until reset)
+*Headers:* 
+- `Retry-After: 45` (seconds until reset)
+- `X-RateLimit-Limit: 10` (requests per minute)
+- `X-RateLimit-Remaining: 0` (requests remaining)
+
+**UI Behavior:** When rate limited, the dashboard will:
+- Display a toast notification with countdown
+- Disable the submit button showing "Wait Xs" with live countdown
+- Show an error banner with retry time
+- Automatically re-enable after the countdown expires
 
 ### Check Job Status
 

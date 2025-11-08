@@ -24,16 +24,39 @@ export default function LoginPage() {
     setLoading(true)
     setError(null)
 
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    })
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      })
 
-    if (error) {
-      setError(error.message)
+      if (error) {
+        setError(error.message)
+        setLoading(false)
+        return
+      }
+
+      // Wait for session to be established
+      if (data.session) {
+        // Force a small delay to ensure cookies are set
+        await new Promise(resolve => setTimeout(resolve, 100))
+        
+        // Verify session is accessible
+        const { data: { session } } = await supabase.auth.getSession()
+        if (session) {
+          router.push('/dashboard')
+          router.refresh() // Force router to refresh and pick up new auth state
+        } else {
+          setError('Session not established. Please try again.')
+          setLoading(false)
+        }
+      } else {
+        setError('Authentication failed. Please try again.')
+        setLoading(false)
+      }
+    } catch (err: any) {
+      setError(err.message || 'An unexpected error occurred')
       setLoading(false)
-    } else {
-      router.push('/dashboard')
     }
   }
 

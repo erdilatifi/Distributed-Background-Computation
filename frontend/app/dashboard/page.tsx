@@ -79,9 +79,14 @@ export default function DashboardPage() {
   const jobsPerPage = 4
   const [apiToken, setApiToken] = useState<string | null>(null)
   const [tokenCopied, setTokenCopied] = useState(false)
+  
+  // Rate limiting state
+  const [isRateLimited, setIsRateLimited] = useState(false)
+  const [rateLimitCountdown, setRateLimitCountdown] = useState(0)
 
   const pollRef = useRef<NodeJS.Timeout | null>(null)
   const retryTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const rateLimitTimerRef = useRef<NodeJS.Timeout | null>(null)
 
   // Fetch job history and stats
   const fetchJobHistory = useCallback(async () => {
@@ -172,17 +177,39 @@ export default function DashboardPage() {
   
   useEffect(() => {
     const checkUser = async () => {
-      const { data: { user }, error } = await supabase.auth.getUser()
-      
-      if (error) {
-        console.error('Auth error:', error)
-      }
-      
-      if (!user) {
+      try {
+        // First check if we have a session
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+        
+        if (sessionError) {
+          console.error('Session error:', sessionError)
+          router.push('/login')
+          return
+        }
+        
+        if (!session) {
+          router.push('/login')
+          return
+        }
+        
+        // Then verify the user
+        const { data: { user }, error: userError } = await supabase.auth.getUser()
+        
+        if (userError) {
+          console.error('Auth error:', userError)
+          router.push('/login')
+          return
+        }
+        
+        if (!user) {
+          router.push('/login')
+        } else {
+          setUser(user)
+          setLoading(false)
+        }
+      } catch (err) {
+        console.error('Unexpected auth error:', err)
         router.push('/login')
-      } else {
-        setUser(user)
-        setLoading(false)
       }
     }
     checkUser()
@@ -193,6 +220,7 @@ export default function DashboardPage() {
         router.push('/login')
       } else {
         setUser(session.user)
+        setLoading(false)
       }
     })
 
@@ -370,6 +398,14 @@ export default function DashboardPage() {
         clearInterval(pollRef.current)
         pollRef.current = null
       }
+      if (rateLimitTimerRef.current) {
+        clearInterval(rateLimitTimerRef.current)
+        rateLimitTimerRef.current = null
+      }
+      if (retryTimeoutRef.current) {
+        clearTimeout(retryTimeoutRef.current)
+        retryTimeoutRef.current = null
+      }
     }
   }, [jobId, user, status, fetchJobStatus, supabase])
 
@@ -425,16 +461,46 @@ export default function DashboardPage() {
       })
 
       if (response.status === 429) {
-        const retryAfter = response.headers.get('Retry-After')
+        const retryAfter = parseInt(response.headers.get('Retry-After') || '60', 10)
         const limit = response.headers.get('X-RateLimit-Limit')
         const remaining = response.headers.get('X-RateLimit-Remaining')
+        
+        // Set rate limit state
+        setIsRateLimited(true)
+        setRateLimitCountdown(retryAfter)
+        
         toast.error('🚦 Rate limit exceeded', {
-          description: retryAfter 
-            ? `Demo limit: ${limit} requests/min. Please wait ${retryAfter} seconds.`
-            : `Too many requests. You have ${remaining || 0} requests remaining.`
+          description: `Demo limit: ${limit} requests/min. Please wait ${retryAfter} seconds.`,
+          duration: 5000
         })
-        setError(`🚦 Rate limit: Please wait ${retryAfter || 60} seconds before trying again.`)
+        setError(`🚦 Rate limit: Please wait ${retryAfter} seconds before trying again.`)
         setIsSubmitting(false)
+        
+        // Start countdown timer
+        const startTime = Date.now()
+        const endTime = startTime + (retryAfter * 1000)
+        
+        const updateCountdown = () => {
+          const now = Date.now()
+          const remaining = Math.ceil((endTime - now) / 1000)
+          
+          if (remaining <= 0) {
+            setIsRateLimited(false)
+            setRateLimitCountdown(0)
+            setError(null)
+            if (rateLimitTimerRef.current) {
+              clearInterval(rateLimitTimerRef.current)
+              rateLimitTimerRef.current = null
+            }
+          } else {
+            setRateLimitCountdown(remaining)
+          }
+        }
+        
+        // Update immediately and then every second
+        updateCountdown()
+        rateLimitTimerRef.current = setInterval(updateCountdown, 1000)
+        
         return
       }
 
@@ -723,7 +789,7 @@ export default function DashboardPage() {
                 <div className="flex flex-col sm:flex-row gap-3">
                   <Button 
                     type="submit" 
-                    disabled={isSubmitting || isWarmingUp || !!nError || !!chunksError || n === '' || chunks === ''} 
+                    disabled={isSubmitting || isWarmingUp || isRateLimited || !!nError || !!chunksError || n === '' || chunks === ''} 
                     className="w-full sm:flex-1 h-12 md:h-14 bg-blue-600 hover:bg-blue-500 text-white font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     size="lg"
                   >
@@ -731,6 +797,11 @@ export default function DashboardPage() {
                       <>
                         <Loader2 className="mr-2 h-4 w-4 md:h-5 md:w-5 animate-spin" />
                         <span className="text-sm md:text-base">Submitting...</span>
+                      </>
+                    ) : isRateLimited ? (
+                      <>
+                        <Clock className="mr-2 h-4 w-4 md:h-5 md:w-5" />
+                        <span className="text-sm md:text-base">Wait {rateLimitCountdown}s</span>
                       </>
                     ) : (
                       <>
