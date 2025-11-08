@@ -647,16 +647,16 @@ async def create_demo_job(
         )
     
     # P3: Tighter validation for demo
-    if payload.n <= 0 or payload.n > 1_000_000:
+    if payload.n <= 0 or payload.n > 10_000:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="⚠️ Demo limit: n must be between 1 and 1,000,000"
+            detail="⚠️ Demo limit: n must be between 1 and 10,000"
         )
     
-    if payload.chunks <= 0 or payload.chunks > 10:
+    if payload.chunks <= 0 or payload.chunks > 8:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="⚠️ Demo limit: chunks must be between 1 and 10"
+            detail="⚠️ Demo limit: chunks must be between 1 and 8"
         )
     
     job_id = str(uuid.uuid4())
