@@ -1136,9 +1136,9 @@ export default function DashboardPage() {
                         key={job.id}
                         className="p-4 rounded-lg bg-slate-950/50 border border-slate-800/50 hover:border-slate-700/50 transition-all duration-300 group"
                       >
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-3">
-                            <div className={`p-2 rounded-lg ${
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                          <div className="flex items-center gap-3 min-w-0 flex-1">
+                            <div className={`p-2 rounded-lg flex-shrink-0 ${
                               job.status === 'completed' ? 'bg-emerald-500/20' :
                               job.status === 'failed' ? 'bg-red-500/20' :
                               job.status === 'running' ? 'bg-blue-500/20' :
@@ -1149,8 +1149,8 @@ export default function DashboardPage() {
                                job.status === 'running' ? <Loader2 className="h-4 w-4 text-blue-400 animate-spin" /> :
                                <Clock className="h-4 w-4 text-amber-400" />}
                             </div>
-                            <div>
-                              <div className="flex items-center gap-2">
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-center gap-2 flex-wrap">
                                 <span className="font-semibold text-white">n={job.n.toLocaleString()}</span>
                                 <span className="text-slate-500">·</span>
                                 <span className="text-sm text-slate-400">{job.chunks} chunks</span>
@@ -1160,7 +1160,7 @@ export default function DashboardPage() {
                               </div>
                             </div>
                           </div>
-                          <div className="text-right">
+                          <div className="text-left sm:text-right w-full sm:w-auto sm:flex-shrink-0">
                             <div className={`text-sm font-semibold capitalize ${
                               job.status === 'completed' ? 'text-emerald-400' :
                               job.status === 'failed' ? 'text-red-400' :
@@ -1170,7 +1170,7 @@ export default function DashboardPage() {
                               {job.status}
                             </div>
                             {job.result && (
-                              <div className="text-xs text-slate-400 mt-1">
+                              <div className="text-xs text-slate-400 mt-1 break-all">
                                 Result: {job.result.toLocaleString()}
                               </div>
                             )}
